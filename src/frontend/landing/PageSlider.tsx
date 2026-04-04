@@ -56,18 +56,20 @@ export default function PageSlider() {
 
           <div className="flex flex-col md:flex-row items-center gap-10 md:gap-16">
 
-            {/* Big number display */}
+            {/* Big number display — fixed container, only the number scales */}
             <div className="flex-shrink-0 flex flex-col items-center">
-              <div
-                className="font-headline font-black text-primary leading-none"
-                style={{
-                  fontSize: "clamp(5rem, 12vw, 8rem)",
-                  filter: "drop-shadow(6px 6px 0px rgba(0,0,0,1))",
-                  transform: "rotate(-3deg)",
-                  display: "inline-block",
-                }}
-              >
-                {pages}
+              <div className="w-36 h-36 flex items-center justify-center">
+                <div
+                  className="font-headline font-black text-primary leading-none transition-all duration-150"
+                  style={{
+                    fontSize: `${4 + ((pages - PAGE_MIN) / (PAGE_MAX - PAGE_MIN)) * 5}rem`,
+                    filter: "drop-shadow(6px 6px 0px rgba(0,0,0,1))",
+                    transform: "rotate(-3deg)",
+                    display: "inline-block",
+                  }}
+                >
+                  {pages}
+                </div>
               </div>
               <div
                 className="font-headline text-sm font-black uppercase tracking-widest text-on-surface-muted mt-2"

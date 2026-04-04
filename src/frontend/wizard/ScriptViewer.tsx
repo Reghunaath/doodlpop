@@ -1,127 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import type { Script, GenerationMode } from "@/backend/lib/types";
+import { generateScript, regenerateScript, approveComic } from "@/frontend/lib/api";
+import { updateSavedComic } from "@/frontend/lib/local-storage";
 import ModeToggle from "./ModeToggle";
 
-// ── Hardcoded script ───────────────────────────────────────────────────────
+interface ScriptViewerProps {
+  comicId: string;
+}
 
-const HARDCODED_SCRIPT: Script = {
-  title: "INSPECTOR WHISKERS AND THE STOLEN STAR",
-  synopsis:
-    "In the neon-drenched streets of Neo-Furropolis, grumpy feline detective Inspector Whiskers is pulled out of retirement when the city's legendary Star Diamond goes missing. With a wisecracking robot sidekick and zero patience for nonsense, he'll claw his way to the truth — one sarcastic remark at a time.",
-  pages: [
-    {
-      pageNumber: 1,
-      panels: [
-        {
-          panelNumber: 1,
-          description:
-            "Wide establishing shot of Neo-Furropolis at dusk. Towering chrome skyscrapers stretch into a violet sky. Holographic billboards flicker. In the foreground, a single dimly lit office window reads 'WHISKERS & CO. — PRIVATE INVESTIGATIONS'.",
-          dialogue: [],
-          caption: "Neo-Furropolis. The city that never sleeps — mostly because the coffee is terrible.",
-        },
-        {
-          panelNumber: 2,
-          description:
-            "Interior of the detective office. Inspector Whiskers — a stocky orange tabby in a rumpled trench coat — sits behind a paper-avalanche desk. He wears a tiny monocle. His robot sidekick, BOLT-7, stands by the window polishing its chrome torso.",
-          dialogue: [
-            { speaker: "BOLT-7", text: "Boss, we've had zero clients this month." },
-            { speaker: "WHISKERS", text: "Exactly how I like it." },
-          ],
-          caption: null,
-        },
-        {
-          panelNumber: 3,
-          description:
-            "The office door bursts open. A well-dressed Persian cat — DUCHESS FLUFFINGTON — stands in the doorway, clutching a jewelled handbag, eyes wide with panic.",
-          dialogue: [
-            { speaker: "DUCHESS", text: "Inspector! The Star Diamond — it's GONE!" },
-          ],
-          caption: null,
-        },
-      ],
-    },
-    {
-      pageNumber: 2,
-      panels: [
-        {
-          panelNumber: 1,
-          description:
-            "Close-up on Whiskers' face. One eyebrow raised, monocle gleaming, coffee mug halfway to his lips. He looks profoundly inconvenienced.",
-          dialogue: [
-            { speaker: "WHISKERS", text: "Gone. Right. And you need ME why?" },
-            { speaker: "DUCHESS", text: "Because the police are useless and you're... cheaper." },
-          ],
-          caption: null,
-        },
-        {
-          panelNumber: 2,
-          description:
-            "Whiskers and BOLT-7 stand outside the Furropolis Museum of Glittery Things. Police tape everywhere. A flustered bulldog cop talks into a walkie-talkie. The display case inside is visibly empty.",
-          dialogue: [
-            { speaker: "BOLT-7", text: "Records indicate the diamond is worth 40 million." },
-            { speaker: "WHISKERS", text: "Records indicate you talk too much." },
-          ],
-          caption: "Scene of the crime. Or as Whiskers called it: Scene of the mildly interesting inconvenience.",
-        },
-        {
-          panelNumber: 3,
-          description:
-            "Whiskers crouches, examining a tiny paw print near the empty display case with a magnifying glass. BOLT-7 scans the room with laser eyes. A small suspicious shadow lurks in the background vent.",
-          dialogue: [
-            { speaker: "WHISKERS", text: "Whoever did this… has very small feet." },
-            { speaker: "BOLT-7", text: "Or very stylish boots." },
-          ],
-          caption: null,
-        },
-      ],
-    },
-    {
-      pageNumber: 3,
-      panels: [
-        {
-          panelNumber: 1,
-          description:
-            "Rooftop chase scene. Whiskers sprints across a rain-slicked rooftop in pursuit of a hooded figure clutching a glowing diamond. Neon lights reflect in puddles below. BOLT-7 flies alongside using jet-boots.",
-          dialogue: [
-            { speaker: "WHISKERS", text: "STOP! I'm too old for this!" },
-          ],
-          caption: null,
-        },
-        {
-          panelNumber: 2,
-          description:
-            "The hooded figure trips on a satellite dish. The diamond flies into the air, spinning, scattering brilliant light across the rooftop. Both Whiskers and the thief dive for it simultaneously.",
-          dialogue: [],
-          caption: "Time seemed to slow. For about half a second.",
-        },
-        {
-          panelNumber: 3,
-          description:
-            "Whiskers holds the recovered diamond triumphantly. The thief — revealed to be a tiny, embarrassed hamster in an oversized coat — sits in handcuffs nearby. BOLT-7 takes a photo. The city glitters behind them.",
-          dialogue: [
-            { speaker: "WHISKERS", text: "A hamster. The culprit was a hamster." },
-            { speaker: "BOLT-7", text: "To be fair, very stylish boots." },
-            { speaker: "WHISKERS", text: "I'm going back to retirement." },
-          ],
-          caption: "Case closed. Again.",
-        },
-      ],
-    },
-  ],
-};
-
-// ── Component ──────────────────────────────────────────────────────────────
-
-export default function ScriptViewer() {
+export default function ScriptViewer({ comicId }: ScriptViewerProps) {
   const router = useRouter();
-  const [script, setScript] = useState<Script>(HARDCODED_SCRIPT);
+  const [script, setScript] = useState<Script | null>(null);
   const [expandedPages, setExpandedPages] = useState<Set<number>>(new Set([1]));
   const [mode, setMode] = useState<GenerationMode>("automated");
+
+  const [isGenerating, setIsGenerating] = useState(true);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [showRegenInput, setShowRegenInput] = useState(false);
+  const [regenFeedback, setRegenFeedback] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  // Generate script on mount
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await generateScript(comicId);
+        if (cancelled) return;
+        setScript(res.script);
+        updateSavedComic(comicId, { title: res.script.title, status: "script_draft" });
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to generate script");
+        }
+      } finally {
+        if (!cancelled) setIsGenerating(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [comicId]);
 
   const togglePage = (pageNum: number) => {
     setExpandedPages((prev) => {
@@ -132,8 +57,8 @@ export default function ScriptViewer() {
     });
   };
 
-  const updateTitle = (val: string) => setScript((s) => ({ ...s, title: val }));
-  const updateSynopsis = (val: string) => setScript((s) => ({ ...s, synopsis: val }));
+  const updateTitle = (val: string) => setScript((s) => s ? { ...s, title: val } : s);
+  const updateSynopsis = (val: string) => setScript((s) => s ? { ...s, synopsis: val } : s);
 
   const updatePanelField = (
     pageIdx: number,
@@ -142,6 +67,7 @@ export default function ScriptViewer() {
     val: string
   ) => {
     setScript((s) => {
+      if (!s) return s;
       const pages = s.pages.map((p, pi) =>
         pi !== pageIdx
           ? p
@@ -164,6 +90,7 @@ export default function ScriptViewer() {
     val: string
   ) => {
     setScript((s) => {
+      if (!s) return s;
       const pages = s.pages.map((p, pi) =>
         pi !== pageIdx
           ? p
@@ -184,6 +111,52 @@ export default function ScriptViewer() {
       return { ...s, pages };
     });
   };
+
+  const handleRegenerate = async () => {
+    const feedback = regenFeedback.trim();
+    if (!feedback) return;
+
+    setIsRegenerating(true);
+    setError(null);
+    try {
+      const res = await regenerateScript(comicId, { feedback });
+      setScript(res.script);
+      updateSavedComic(comicId, { title: res.script.title });
+      setShowRegenInput(false);
+      setRegenFeedback("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to regenerate script");
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!script) return;
+
+    setIsApproving(true);
+    setError(null);
+    try {
+      await approveComic(comicId, { script, generationMode: mode });
+      updateSavedComic(comicId, { status: "script_approved" });
+      if (mode === "automated") {
+        router.push(`/comic/${comicId}`);
+      } else {
+        router.push(`/review/${comicId}`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to approve script");
+      setIsApproving(false);
+    }
+  };
+
+  const bubbleText = isGenerating
+    ? "HOLD TIGHT! I'M WRITING THE GREATEST SCRIPT SINCE SLICED COMICS..."
+    : isRegenerating
+    ? "RE-WRITING! MAKING IT EVEN MORE EPIC THIS TIME..."
+    : error
+    ? error
+    : "THIS IS YOUR MASTERPIECE IN THE MAKING! EDIT ANY PANEL, ANY LINE — THEN HIT GENERATE!";
 
   return (
     <div className="min-h-screen flex flex-col bg-surface ben-day-dots">
@@ -265,201 +238,279 @@ export default function ScriptViewer() {
 
             <div className="bg-surface-white ink-border ink-shadow p-5 relative speech-bubble-tail-sm w-full mt-4">
               <p className="font-body font-bold text-center leading-snug text-sm uppercase">
-                "THIS IS YOUR MASTERPIECE IN THE MAKING! EDIT ANY PANEL, ANY LINE — THEN HIT GENERATE!"
+                &quot;{bubbleText}&quot;
               </p>
             </div>
 
             {/* Script stats */}
-            <div className="w-full space-y-3">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="h-1 flex-1 bg-black" />
-                <span className="font-headline text-xs font-black uppercase tracking-widest text-on-surface-muted whitespace-nowrap">
-                  Script Stats
-                </span>
-                <div className="h-1 flex-1 bg-black" />
-              </div>
-              {[
-                { label: "Pages", value: script.pages.length },
-                {
-                  label: "Panels",
-                  value: script.pages.reduce((acc, p) => acc + p.panels.length, 0),
-                },
-                {
-                  label: "Lines",
-                  value: script.pages.reduce(
-                    (acc, p) =>
-                      acc + p.panels.reduce((a, pn) => a + pn.dialogue.length, 0),
-                    0
-                  ),
-                },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex justify-between items-center bg-surface-card ink-border px-4 py-2">
-                  <span className="font-headline text-xs uppercase font-black text-on-surface-muted">
-                    {label}
+            {script && (
+              <div className="w-full space-y-3">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-1 flex-1 bg-black" />
+                  <span className="font-headline text-xs font-black uppercase tracking-widest text-on-surface-muted whitespace-nowrap">
+                    Script Stats
                   </span>
-                  <span className="font-headline text-2xl font-black text-primary">
-                    {value}
-                  </span>
+                  <div className="h-1 flex-1 bg-black" />
                 </div>
-              ))}
-            </div>
+                {[
+                  { label: "Pages", value: script.pages.length },
+                  {
+                    label: "Panels",
+                    value: script.pages.reduce((acc, p) => acc + p.panels.length, 0),
+                  },
+                  {
+                    label: "Lines",
+                    value: script.pages.reduce(
+                      (acc, p) =>
+                        acc + p.panels.reduce((a, pn) => a + pn.dialogue.length, 0),
+                      0
+                    ),
+                  },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex justify-between items-center bg-surface-card ink-border px-4 py-2">
+                    <span className="font-headline text-xs uppercase font-black text-on-surface-muted">
+                      {label}
+                    </span>
+                    <span className="font-headline text-2xl font-black text-primary">
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </aside>
 
           {/* ── SCRIPT CANVAS ────────────────────────── */}
           <section className="lg:col-span-9 space-y-6">
 
-            {/* Title */}
-            <div className="bg-surface-white ink-border ink-shadow p-6">
-              <label className="font-headline text-xs uppercase font-black text-primary block mb-2">
-                Comic Title
-              </label>
-              <input
-                type="text"
-                value={script.title}
-                onChange={(e) => updateTitle(e.target.value)}
-                className="w-full bg-surface-low ink-border px-4 py-3 font-headline text-xl font-black uppercase outline-none focus:border-primary transition-colors"
-              />
-            </div>
+            {isGenerating ? (
+              <div className="flex flex-col items-center justify-center gap-6 py-24">
+                <div className="bg-secondary-bg ink-border ink-shadow px-12 py-8 animate-pulse" style={{ transform: "rotate(-1deg)" }}>
+                  <span className="font-headline text-3xl font-black uppercase">
+                    WRITING YOUR SCRIPT...
+                  </span>
+                </div>
+                <p className="font-body text-sm text-on-surface-muted italic">
+                  This may take a moment — your AI writer is crafting something special.
+                </p>
+              </div>
+            ) : error && !script ? (
+              <div className="flex flex-col items-center justify-center gap-6 py-24">
+                <div className="bg-primary ink-border px-8 py-4">
+                  <span className="font-headline text-xl font-black text-white uppercase">{error}</span>
+                </div>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="font-headline text-sm font-black uppercase text-primary hover:underline cursor-pointer"
+                >
+                  TRY AGAIN
+                </button>
+              </div>
+            ) : script ? (
+              <>
+                {/* Error banner */}
+                {error && (
+                  <div className="bg-primary ink-border px-6 py-2" style={{ transform: "rotate(-1deg)" }}>
+                    <p className="font-headline text-sm font-black text-white uppercase">{error}</p>
+                  </div>
+                )}
 
-            {/* Synopsis */}
-            <div className="bg-surface-white ink-border ink-shadow p-6">
-              <label className="font-headline text-xs uppercase font-black text-primary block mb-2">
-                Synopsis
-              </label>
-              <textarea
-                value={script.synopsis}
-                onChange={(e) => updateSynopsis(e.target.value)}
-                rows={3}
-                className="w-full bg-surface-low ink-border px-4 py-3 font-body text-sm leading-relaxed outline-none focus:border-primary transition-colors resize-none"
-              />
-            </div>
+                {/* Title */}
+                <div className="bg-surface-white ink-border ink-shadow p-6">
+                  <label className="font-headline text-xs uppercase font-black text-primary block mb-2">
+                    Comic Title
+                  </label>
+                  <input
+                    type="text"
+                    value={script.title}
+                    onChange={(e) => updateTitle(e.target.value)}
+                    className="w-full bg-surface-low ink-border px-4 py-3 font-headline text-xl font-black uppercase outline-none focus:border-primary transition-colors"
+                  />
+                </div>
 
-            {/* Pages */}
-            {script.pages.map((page, pageIdx) => {
-              const isOpen = expandedPages.has(page.pageNumber);
-              return (
-                <div key={page.pageNumber} className="ink-border ink-shadow bg-surface-white overflow-hidden">
-                  {/* Page header — clickable accordion toggle */}
-                  <button
-                    type="button"
-                    onClick={() => togglePage(page.pageNumber)}
-                    className="w-full flex items-center justify-between px-6 py-4 bg-ink text-white hover:bg-primary transition-colors duration-100 cursor-pointer"
-                  >
-                    <div className="flex items-center gap-4">
-                      <span className="font-headline text-3xl font-black">
-                        {String(page.pageNumber).padStart(2, "0")}
-                      </span>
-                      <span className="font-headline text-sm uppercase font-black opacity-70">
-                        Page {page.pageNumber} — {page.panels.length} panel{page.panels.length !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                    <span className="font-headline text-2xl font-black">
-                      {isOpen ? "−" : "+"}
-                    </span>
-                  </button>
+                {/* Synopsis */}
+                <div className="bg-surface-white ink-border ink-shadow p-6">
+                  <label className="font-headline text-xs uppercase font-black text-primary block mb-2">
+                    Synopsis
+                  </label>
+                  <textarea
+                    value={script.synopsis}
+                    onChange={(e) => updateSynopsis(e.target.value)}
+                    rows={3}
+                    className="w-full bg-surface-low ink-border px-4 py-3 font-body text-sm leading-relaxed outline-none focus:border-primary transition-colors resize-none"
+                  />
+                </div>
 
-                  {/* Panels */}
-                  {isOpen && (
-                    <div className="divide-y-4 divide-black">
-                      {page.panels.map((panel, panelIdx) => (
-                        <div key={panel.panelNumber} className="p-6 space-y-4">
-                          {/* Panel header */}
-                          <div className="flex items-center gap-3">
-                            <div className="bg-primary text-white ink-border w-8 h-8 flex items-center justify-center font-headline text-sm font-black shrink-0">
-                              {panel.panelNumber}
-                            </div>
-                            <span className="font-headline text-xs uppercase font-black text-on-surface-muted">
-                              Panel {panel.panelNumber}
-                            </span>
-                          </div>
-
-                          {/* Visual description */}
-                          <div>
-                            <label className="font-headline text-[10px] uppercase font-black text-on-surface-muted block mb-1">
-                              Visual Description
-                            </label>
-                            <textarea
-                              value={panel.description}
-                              onChange={(e) =>
-                                updatePanelField(pageIdx, panelIdx, "description", e.target.value)
-                              }
-                              rows={3}
-                              className="w-full bg-surface-low ink-border px-4 py-3 font-body text-sm leading-relaxed outline-none focus:border-primary transition-colors resize-none"
-                            />
-                          </div>
-
-                          {/* Caption */}
-                          {panel.caption !== undefined && (
-                            <div>
-                              <label className="font-headline text-[10px] uppercase font-black text-on-surface-muted block mb-1">
-                                Narrator Caption
-                              </label>
-                              <input
-                                type="text"
-                                value={panel.caption ?? ""}
-                                onChange={(e) =>
-                                  updatePanelField(pageIdx, panelIdx, "caption", e.target.value)
-                                }
-                                placeholder="(no caption)"
-                                className="w-full bg-surface-low ink-border px-4 py-3 font-body text-sm italic outline-none focus:border-primary transition-colors"
-                              />
-                            </div>
-                          )}
-
-                          {/* Dialogue lines */}
-                          {panel.dialogue.length > 0 && (
-                            <div className="space-y-2">
-                              <label className="font-headline text-[10px] uppercase font-black text-on-surface-muted block">
-                                Dialogue
-                              </label>
-                              {panel.dialogue.map((line, lineIdx) => (
-                                <div key={lineIdx} className="flex gap-3 items-start">
-                                  <div className="relative shrink-0">
-                                    <div className="absolute inset-0 bg-secondary-bg ink-border translate-x-1 translate-y-1" />
-                                    <input
-                                      type="text"
-                                      value={line.speaker}
-                                      onChange={(e) =>
-                                        updateDialogue(pageIdx, panelIdx, lineIdx, "speaker", e.target.value)
-                                      }
-                                      className="relative w-28 bg-surface-white ink-border px-2 py-2 font-headline text-xs font-black uppercase outline-none focus:border-primary transition-colors"
-                                    />
-                                  </div>
-                                  <input
-                                    type="text"
-                                    value={line.text}
-                                    onChange={(e) =>
-                                      updateDialogue(pageIdx, panelIdx, lineIdx, "text", e.target.value)
-                                    }
-                                    className="flex-1 bg-surface-low ink-border px-4 py-2 font-body text-sm outline-none focus:border-primary transition-colors"
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                {/* Regenerate with feedback */}
+                <div className="flex flex-wrap gap-4 items-center">
+                  {!showRegenInput ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowRegenInput(true)}
+                      className="bg-surface-card ink-border px-6 py-3 font-headline text-sm font-black uppercase text-on-surface hover:bg-secondary-bg transition-colors cursor-pointer"
+                    >
+                      REGENERATE SCRIPT
+                    </button>
+                  ) : (
+                    <div className="w-full bg-surface-white ink-border ink-shadow p-6 space-y-3">
+                      <label className="font-headline text-xs uppercase font-black text-primary block">
+                        What should change?
+                      </label>
+                      <textarea
+                        value={regenFeedback}
+                        onChange={(e) => setRegenFeedback(e.target.value)}
+                        rows={2}
+                        placeholder="e.g. Make the villain more menacing, add a twist ending..."
+                        className="w-full bg-surface-low ink-border px-4 py-3 font-body text-sm outline-none focus:border-primary transition-colors resize-none"
+                      />
+                      <div className="flex gap-3">
+                        <button
+                          onClick={handleRegenerate}
+                          disabled={!regenFeedback.trim() || isRegenerating}
+                          className="bg-primary ink-border px-6 py-2 font-headline text-sm font-black uppercase text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isRegenerating ? "REGENERATING..." : "REGENERATE"}
+                        </button>
+                        <button
+                          onClick={() => { setShowRegenInput(false); setRegenFeedback(""); }}
+                          className="font-headline text-xs font-black uppercase text-on-surface-muted hover:text-on-surface cursor-pointer"
+                        >
+                          CANCEL
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
-              );
-            })}
 
-            {/* Mode toggle */}
-            <ModeToggle value={mode} onChange={setMode} />
+                {/* Pages */}
+                {script.pages.map((page, pageIdx) => {
+                  const isOpen = expandedPages.has(page.pageNumber);
+                  return (
+                    <div key={page.pageNumber} className="ink-border ink-shadow bg-surface-white overflow-hidden">
+                      {/* Page header — clickable accordion toggle */}
+                      <button
+                        type="button"
+                        onClick={() => togglePage(page.pageNumber)}
+                        className="w-full flex items-center justify-between px-6 py-4 bg-ink text-white hover:bg-primary transition-colors duration-100 cursor-pointer"
+                      >
+                        <div className="flex items-center gap-4">
+                          <span className="font-headline text-3xl font-black">
+                            {String(page.pageNumber).padStart(2, "0")}
+                          </span>
+                          <span className="font-headline text-sm uppercase font-black opacity-70">
+                            Page {page.pageNumber} — {page.panels.length} panel{page.panels.length !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                        <span className="font-headline text-2xl font-black">
+                          {isOpen ? "−" : "+"}
+                        </span>
+                      </button>
 
-            {/* Generate Comic CTA */}
-            <div className="flex justify-center pt-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-tertiary-dim ink-border translate-x-3 translate-y-3" />
-                <button
-                  onClick={() => router.push(`/comic?mode=${mode}`)}
-                  className="relative bg-tertiary ink-border px-16 py-6 font-headline text-3xl font-black italic uppercase text-on-tertiary tracking-wide hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 cursor-pointer"
-                >
-                  GENERATE COMIC →
-                </button>
-              </div>
-            </div>
+                      {/* Panels */}
+                      {isOpen && (
+                        <div className="divide-y-4 divide-black">
+                          {page.panels.map((panel, panelIdx) => (
+                            <div key={panel.panelNumber} className="p-6 space-y-4">
+                              {/* Panel header */}
+                              <div className="flex items-center gap-3">
+                                <div className="bg-primary text-white ink-border w-8 h-8 flex items-center justify-center font-headline text-sm font-black shrink-0">
+                                  {panel.panelNumber}
+                                </div>
+                                <span className="font-headline text-xs uppercase font-black text-on-surface-muted">
+                                  Panel {panel.panelNumber}
+                                </span>
+                              </div>
+
+                              {/* Visual description */}
+                              <div>
+                                <label className="font-headline text-[10px] uppercase font-black text-on-surface-muted block mb-1">
+                                  Visual Description
+                                </label>
+                                <textarea
+                                  value={panel.description}
+                                  onChange={(e) =>
+                                    updatePanelField(pageIdx, panelIdx, "description", e.target.value)
+                                  }
+                                  rows={3}
+                                  className="w-full bg-surface-low ink-border px-4 py-3 font-body text-sm leading-relaxed outline-none focus:border-primary transition-colors resize-none"
+                                />
+                              </div>
+
+                              {/* Caption */}
+                              {panel.caption !== undefined && (
+                                <div>
+                                  <label className="font-headline text-[10px] uppercase font-black text-on-surface-muted block mb-1">
+                                    Narrator Caption
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={panel.caption ?? ""}
+                                    onChange={(e) =>
+                                      updatePanelField(pageIdx, panelIdx, "caption", e.target.value)
+                                    }
+                                    placeholder="(no caption)"
+                                    className="w-full bg-surface-low ink-border px-4 py-3 font-body text-sm italic outline-none focus:border-primary transition-colors"
+                                  />
+                                </div>
+                              )}
+
+                              {/* Dialogue lines */}
+                              {panel.dialogue.length > 0 && (
+                                <div className="space-y-2">
+                                  <label className="font-headline text-[10px] uppercase font-black text-on-surface-muted block">
+                                    Dialogue
+                                  </label>
+                                  {panel.dialogue.map((line, lineIdx) => (
+                                    <div key={lineIdx} className="flex gap-3 items-start">
+                                      <div className="relative shrink-0">
+                                        <div className="absolute inset-0 bg-secondary-bg ink-border translate-x-1 translate-y-1" />
+                                        <input
+                                          type="text"
+                                          value={line.speaker}
+                                          onChange={(e) =>
+                                            updateDialogue(pageIdx, panelIdx, lineIdx, "speaker", e.target.value)
+                                          }
+                                          className="relative w-28 bg-surface-white ink-border px-2 py-2 font-headline text-xs font-black uppercase outline-none focus:border-primary transition-colors"
+                                        />
+                                      </div>
+                                      <input
+                                        type="text"
+                                        value={line.text}
+                                        onChange={(e) =>
+                                          updateDialogue(pageIdx, panelIdx, lineIdx, "text", e.target.value)
+                                        }
+                                        className="flex-1 bg-surface-low ink-border px-4 py-2 font-body text-sm outline-none focus:border-primary transition-colors"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Mode toggle */}
+                <ModeToggle value={mode} onChange={setMode} />
+
+                {/* Generate Comic CTA */}
+                <div className="flex justify-center pt-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-tertiary-dim ink-border translate-x-3 translate-y-3" />
+                    <button
+                      onClick={handleApprove}
+                      disabled={isApproving}
+                      className="relative bg-tertiary ink-border px-16 py-6 font-headline text-3xl font-black italic uppercase text-on-tertiary tracking-wide hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isApproving ? "APPROVING..." : "GENERATE COMIC →"}
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : null}
           </section>
         </div>
       </main>

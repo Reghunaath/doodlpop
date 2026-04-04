@@ -1,7 +1,16 @@
 import { Suspense } from "react";
-import SupervisedViewer from "@/frontend/comic-viewer/SupervisedViewer";
+import ScriptViewer from "@/frontend/wizard/ScriptViewer";
 
-export default function ComicPage() {
+function ScriptContent({ id }: { id: string }) {
+  return <ScriptViewer comicId={id} />;
+}
+
+export default async function ScriptPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
   return (
     <Suspense
       fallback={
@@ -15,7 +24,7 @@ export default function ComicPage() {
         </div>
       }
     >
-      <SupervisedViewer />
+      <ScriptContent id={id} />
     </Suspense>
   );
 }

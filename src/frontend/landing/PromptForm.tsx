@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
-const SURPRISE_PROMPTS = [
+const FALLBACK_PROMPTS = [
   "A retired superhero opens a bakery, but villains keep showing up for free samples.",
   "Two rival robots fall in love at a recycling plant.",
   "A medieval knight discovers a smartphone in a dragon's hoard.",
@@ -11,19 +10,33 @@ const SURPRISE_PROMPTS = [
   "The last librarian on Earth guards books from a government that banned reading.",
 ];
 
-export default function PromptForm() {
-  const [prompt, setPrompt] = useState("");
-  const router = useRouter();
+interface PromptFormProps {
+  prompt: string;
+  onPromptChange: (val: string) => void;
+  onSubmit: () => void;
+  onSurpriseMe: () => Promise<string>;
+}
+
+export default function PromptForm({ prompt, onPromptChange, onSubmit, onSurpriseMe }: PromptFormProps) {
+  const [isSurprising, setIsSurprising] = useState(false);
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
-    const q = prompt.trim();
-    router.push(q ? `/create?prompt=${encodeURIComponent(q)}` : "/create");
+    onSubmit();
   };
 
-  const handleSurpriseMe = () => {
-    const random = SURPRISE_PROMPTS[Math.floor(Math.random() * SURPRISE_PROMPTS.length)];
-    setPrompt(random);
+  const handleSurpriseMe = async () => {
+    setIsSurprising(true);
+    try {
+      const idea = await onSurpriseMe();
+      onPromptChange(idea);
+    } catch {
+      // Fallback to local random prompt
+      const random = FALLBACK_PROMPTS[Math.floor(Math.random() * FALLBACK_PROMPTS.length)];
+      onPromptChange(random);
+    } finally {
+      setIsSurprising(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -53,7 +66,7 @@ export default function PromptForm() {
             className="w-full bg-transparent border-none outline-none ring-0 font-body text-xl md:text-2xl placeholder:text-on-surface-muted/50 italic min-h-[180px] resize-none mt-2 text-on-surface leading-relaxed"
             placeholder="In a world where robots dream of becoming artists, one malfunctioning unit discovers a hidden paintbrush..."
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={(e) => onPromptChange(e.target.value)}
             onKeyDown={handleKeyDown}
           />
 
@@ -61,11 +74,12 @@ export default function PromptForm() {
           <button
             type="button"
             onClick={handleSurpriseMe}
-            className="absolute -bottom-5 right-6 bg-tertiary ink-border px-4 py-1 font-headline text-on-tertiary font-black uppercase tracking-widest text-sm cursor-pointer hover:bg-tertiary-dim transition-colors flex items-center gap-1.5"
+            disabled={isSurprising}
+            className="absolute -bottom-5 right-6 bg-tertiary ink-border px-4 py-1 font-headline text-on-tertiary font-black uppercase tracking-widest text-sm cursor-pointer hover:bg-tertiary-dim transition-colors flex items-center gap-1.5 disabled:opacity-60"
             style={{ transform: "rotate(2deg)" }}
           >
             <span className="text-base leading-none">✦</span>
-            Surprise Me!
+            {isSurprising ? "THINKING..." : "Surprise Me!"}
           </button>
         </div>
       </form>

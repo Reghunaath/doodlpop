@@ -1,67 +1,133 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import type { Comic } from "@/backend/lib/types";
+import { getComic, generateAll, ApiError } from "@/frontend/lib/api";
+import { updateSavedComic } from "@/frontend/lib/local-storage";
 
-// ── Placeholder images (all from lh3.googleusercontent.com — already whitelisted) ──
+interface ComicViewerProps {
+  comicId: string;
+}
 
-// From view.html
-const IMG_SPLASH =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBevTzAZfXVATcRXxmFL0VMdhCCPH__KGk-VM14EH2FKohdBoOnDjJpqNs5tz3PNV_SUspP8cFUlC-sr4tf_j5qyxd6sXBmCuMSofRPhS7WNcfbiGGCxM4IEZDnRpgqqcI7PX3UuJIvqMEaxSx5KrkfTS2EXCJ8U8zey4vC5irwk6TLMJXtoLgG2uP8n4wpM0iSlE-kLb9XwXWPHKyHKsufNqgycYaCkPcAsR4biaziwWD73yZA5dsNXVua_QuCPJPh3xusljAUT6zM";
-const IMG_EYE =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuD-LLiZ0kEQi5rxUtJxqIRKnikQjMPHj_P0lenTyGtRBPKw9U2hEFxuyclr6vh9RvMOGLhLJ-aX_mxyv67T7-SJlN0ckG1Dq5UFxFYe1G5I5Zj7kURVrhlKy2RjQSGf1OMa-SspRd-5KgcF73qlFmoiyN-a-YYdxhRDAk0Y4hKnUMy4EI2Fv1bMkMG6nIJDFS50BoaSDCsja4wqwRIvUaE6amxCtkFrJUJ6yYr3XJDYAMTpFWOBrktxMalX1TtPU3pTXBqzYuJ5hWdt";
-const IMG_GAUNTLET =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuClNefjOSuGWspvlKQpckoRWFWvDDXQQvvi0PKd7u_n2OvVN7WlKaWQCd5jJuMR5uQ6AAMoKrdqWceFt9QftG9a3e59HTutljZOP-hdvzBiU15Adk54Heg6hKeG5wuD8EFGS1G0yHm7RdzOJVVcGmeMruoFHG8WsSPVd7Vuwv65UOfjo9IJNToRkuAeDv2trXUOz2uSdNSAexj_nIzt_EuHh86oTBsF0yuMGHx7yGiu9EmLXQxETWSPt4miuvCILWA5cHfnAawjVsi9";
-const IMG_LEAP =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBRjHJmjHEs4eaYo7tuGR0l5s9Q0RFovaCIAn8fBLaFVLvPoaoFgrn2MT4y56qbbYDbDQ-npKiFbDZspf25MOdep_VRaoPYhC3OdiWdBjOj1JkQmaCnxY5cIff4YRQVpYj_UHyOlA1-yNBVEZJMH49-3yAPeyBtR0zV_NRMSIfrscdBpuGCoJasHYeUlJQHQ8vJhAK_mr3lRxxqQeCKVV_u1wND_ftGMEl19JT7ZBeJw_1kaYDAy3QX43ktYuXAZ3B6sVVFjV";
-
-// From supervise.html
-const IMG_CITY =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDaXOS-OMDzDs4FZHgTEFidk6Rnn0cFp1fLk2UoXTEeh8QSJbDDjpeaXivgklHmtM3g3nQfrhyYlPy9NYkJKrdRBxieX1Kf6WPw7AuARRx-F1G-NVIvuG-cA0Q1gW6FYgv_tsFs2magLVa0CRNpoYsCpXc3UkQhYIQDet39_G8cS3rOGDL2cbC8LMCh20bwGa77kvqEGqM0D2J4utoLIgosNnb8iQRRBXscCZK73p2W5J4zUz8LnCdea80LGgmD6rDODkLfAECZ-tvy";
-const IMG_WIDE =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBP6nBTNYC10nEXTbuA_NpgMZa45ur15qZyIcDg6KSDIAymX1YxdPOqv6yhco_c6FNyUIPMu2BTajRLgXo0fBUOgIZCTtY6_kfAiNco7Pt4xojpJ3pQ_ACtoDJaCE85z5en2-iuJIwCkm5T_linoAfMzEp5JD3nMa_6kX92dM0W-fP8MMz_T4-TUGh35uNtdqjlhDysz_Fe2_gnfqHRdKhevkz-i03muu3sctgD121Uzb2wGlLRnyrNjVTnUrqLxbYsMPhvmjgJMzmc";
-
-// ── Hardcoded comic pages ──────────────────────────────────────────────────
-
-const PAGES = [
-  {
-    pageNumber: 1,
-    caption: "MEANWHILE...",
-    sfx: "WHOOM!",
-    badge: "THREAT LEVEL: OMEGA",
-    quote: "THE CITY CRIED OUT FOR A CHAMPION... BUT ALL THEY GOT WAS ME.",
-    // [splash, action, detail, strip]
-    panels: [IMG_SPLASH, IMG_EYE, IMG_GAUNTLET, IMG_LEAP],
-  },
-  {
-    pageNumber: 2,
-    caption: "THE CHASE BEGINS!",
-    sfx: "KRAKK!",
-    badge: "SPEED: MAXIMUM",
-    quote: "RUNNING WAS NEVER AN OPTION. NEITHER WAS LOSING.",
-    panels: [IMG_CITY, IMG_EYE, IMG_GAUNTLET, IMG_WIDE],
-  },
-  {
-    pageNumber: 3,
-    caption: "THE FINAL SHOWDOWN!",
-    sfx: "BOOM!",
-    badge: "CRITICAL HIT!",
-    quote: "IN THE END, ALL THAT REMAINED WAS THE TRUTH — AND THE TRUTH HURT.",
-    panels: [IMG_WIDE, IMG_LEAP, IMG_SPLASH, IMG_CITY],
-  },
-];
-
-// ── Component ──────────────────────────────────────────────────────────────
-
-export default function ComicViewer() {
+export default function ComicViewer({ comicId }: ComicViewerProps) {
+  const [comic, setComic] = useState<Comic | null>(null);
   const [pageIdx, setPageIdx] = useState(0);
-  const page = PAGES[pageIdx];
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const generationTriggered = useRef(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchComic = useCallback(async () => {
+    const { comic: c } = await getComic(comicId);
+    setComic(c);
+    return c;
+  }, [comicId]);
+
+  // Initial load + trigger automated generation if needed
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const c = await fetchComic();
+        if (cancelled) return;
+
+        // Trigger automated generation if status is script_approved
+        if (
+          c.status === "script_approved" &&
+          c.generationMode === "automated" &&
+          !generationTriggered.current
+        ) {
+          generationTriggered.current = true;
+          // Fire and forget — catch 409 silently (already generating on refresh)
+          generateAll(comicId).catch((err) => {
+            if (err instanceof ApiError && err.status === 409) return;
+            console.error("[ComicViewer] generate-all error:", err);
+          });
+        }
+
+        if (c.status === "complete") {
+          updateSavedComic(comicId, { status: "complete", title: c.script?.title ?? "(untitled)" });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load comic");
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [comicId, fetchComic]);
+
+  // Poll while generating
+  useEffect(() => {
+    if (!comic) return;
+    if (comic.status !== "generating" && comic.status !== "script_approved") return;
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const c = await fetchComic();
+        if (c.status === "complete") {
+          if (pollRef.current) clearInterval(pollRef.current);
+          updateSavedComic(comicId, { status: "complete", title: c.script?.title ?? "(untitled)" });
+        }
+      } catch {
+        // Swallow poll errors
+      }
+    }, 5000);
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [comic?.status, comicId, fetchComic]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface ben-day-dots">
+        <div className="bg-secondary-bg ink-border ink-shadow px-12 py-8 animate-pulse">
+          <span className="font-headline text-3xl font-black uppercase">LOADING...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !comic) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-surface ben-day-dots">
+        <div className="bg-primary ink-border px-8 py-4">
+          <span className="font-headline text-xl font-black text-white uppercase">
+            {error ?? "COMIC NOT FOUND"}
+          </span>
+        </div>
+        <Link
+          href="/"
+          className="font-headline text-sm font-black uppercase text-primary hover:underline"
+        >
+          BACK TO HOME
+        </Link>
+      </div>
+    );
+  }
+
+  const isGenerating = comic.status === "generating" || comic.status === "script_approved";
+  const isComplete = comic.status === "complete";
+  const title = comic.script?.title ?? "UNTITLED COMIC";
+  const pages = comic.pages;
+  const totalExpected = comic.pageCount;
+
+  // Sort pages by pageNumber
+  const sortedPages = [...pages].sort((a, b) => a.pageNumber - b.pageNumber);
+
+  // For complete mode: paginate
+  const currentPage = sortedPages[pageIdx];
   const isFirst = pageIdx === 0;
-  const isLast = pageIdx === PAGES.length - 1;
+  const isLast = pageIdx >= sortedPages.length - 1;
 
   const prev = () => setPageIdx((i) => Math.max(0, i - 1));
-  const next = () => setPageIdx((i) => Math.min(PAGES.length - 1, i + 1));
+  const next = () => setPageIdx((i) => Math.min(sortedPages.length - 1, i + 1));
 
   return (
     <div className="min-h-screen flex flex-col bg-surface">
@@ -95,141 +161,150 @@ export default function ComicViewer() {
           </Link>
         </div>
 
-        <div className="bg-secondary-bg ink-border px-4 py-1 font-headline text-xs font-black uppercase" style={{ transform: "rotate(1deg)" }}>
-          INSPECTOR WHISKERS AND THE STOLEN STAR
+        <div className="bg-secondary-bg ink-border px-4 py-1 font-headline text-xs font-black uppercase max-w-xs truncate" style={{ transform: "rotate(1deg)" }}>
+          {title}
         </div>
       </header>
 
       {/* ── MAIN CONTENT ────────────────────────────────── */}
       <main className="flex-1 pt-24 pb-24 px-4 md:px-8 max-w-7xl mx-auto w-full">
 
-        {/* Page navigation row */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-          {/* PREVIOUS */}
-          <button
-            onClick={prev}
-            disabled={isFirst}
-            className="bg-primary text-white ink-border px-8 py-4 font-headline font-black text-xl italic uppercase tracking-tight ink-shadow hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
-            style={{ transform: "rotate(-2deg)" }}
-          >
-            ← PREVIOUS PAGE
-          </button>
-
-          {/* Page counter */}
-          <div
-            className="bg-secondary-bg ink-border px-10 py-4 ink-shadow flex flex-col items-center"
-            style={{ transform: "rotate(1deg)" }}
-          >
-            <span className="font-headline text-black text-xs tracking-widest mb-1 uppercase">
-              Inspector Whiskers — The Stolen Star
-            </span>
-            <span className="font-headline font-black text-2xl italic text-black uppercase">
-              PAGE {page.pageNumber} OF {PAGES.length}
-            </span>
-          </div>
-
-          {/* NEXT */}
-          <button
-            onClick={next}
-            disabled={isLast}
-            className="bg-primary text-white ink-border px-8 py-4 font-headline font-black text-xl italic uppercase tracking-tight ink-shadow hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
-            style={{ transform: "rotate(2deg)" }}
-          >
-            NEXT PAGE →
-          </button>
-        </div>
-
-        {/* ── COMIC CANVAS ───────────────────────────────── */}
-        <div className="bg-white ink-border p-3 md:p-5 ink-shadow-lg mb-8">
-          {/*
-            Bento grid — 12 cols, 6 rows:
-            [1] Splash   → cols 1-8,  rows 1-4   (big, left)
-            [2] Action   → cols 9-12, rows 1-2   (top right)
-            [3] Detail   → cols 9-12, rows 3-4   (mid right)
-            [4] Strip    → cols 1-4,  rows 5-6   (bottom left)
-            [5] Narrative→ cols 5-12, rows 5-6   (bottom right, text)
-          */}
-          <div
-            className="grid grid-cols-12 grid-rows-6 gap-3"
-            style={{ minHeight: "680px" }}
-          >
-            {/* [1] Splash panel — large hero scene */}
-            <div className="col-span-8 row-span-4 border-4 border-black relative overflow-hidden group">
-              <Image
-                src={page.panels[0]}
-                alt="Comic splash panel"
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-              {/* Caption badge */}
-              <div
-                className="absolute top-4 left-4 z-10 bg-secondary-bg ink-border px-4 py-2 font-headline italic font-black text-base ink-shadow-sm"
-                style={{ transform: "rotate(-3deg)" }}
+        {isGenerating ? (
+          /* ── Generating progress ──────────────── */
+          <div className="space-y-8">
+            <div className="text-center py-8">
+              <h2
+                className="font-headline text-4xl md:text-5xl font-black italic uppercase"
+                style={{ filter: "drop-shadow(4px 4px 0px rgba(186,0,21,1))" }}
               >
-                {page.caption}
-              </div>
-            </div>
-
-            {/* [2] Action panel — close-up with SFX */}
-            <div className="col-span-4 row-span-2 border-4 border-black relative overflow-hidden bg-tertiary-container">
-              <Image
-                src={page.panels[1]}
-                alt="Comic action panel"
-                fill
-                className="object-cover"
-                style={{ filter: "grayscale(30%) contrast(1.4) mix-blend-multiply" }}
-              />
-              <div
-                className="absolute bottom-3 right-3 bg-white ink-border px-3 py-1 font-headline italic font-black text-2xl rotate-3 text-primary"
-                style={{ boxShadow: "3px 3px 0px 0px #000" }}
-              >
-                {page.sfx}
-              </div>
-            </div>
-
-            {/* [3] Detail panel — tech/object close-up */}
-            <div className="col-span-4 row-span-2 border-4 border-black overflow-hidden relative">
-              <Image
-                src={page.panels[2]}
-                alt="Comic detail panel"
-                fill
-                className="object-cover"
-              />
-              <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary ink-border px-4 py-1 text-white font-headline text-xs font-black uppercase"
-                style={{ transform: "translateX(-50%) translateY(-50%) rotate(-12deg)" }}
-              >
-                {page.badge}
-              </div>
-            </div>
-
-            {/* [4] Dynamic strip — action image */}
-            <div className="col-span-4 row-span-2 border-4 border-black overflow-hidden relative group">
-              <Image
-                src={page.panels[3]}
-                alt="Comic strip panel"
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-              />
-            </div>
-
-            {/* [5] Narrative box — text panel */}
-            <div className="col-span-8 row-span-2 border-4 border-black bg-surface-low p-6 flex flex-col justify-center gap-4 ben-day-dots">
-              <div className="w-12 h-1 bg-black" />
-              <p className="font-headline italic text-2xl md:text-3xl font-black leading-tight text-on-surface">
-                &ldquo;{page.quote}&rdquo;
+                GENERATING YOUR COMIC...
+              </h2>
+              <p className="font-body text-on-surface-muted text-sm mt-4">
+                Page {sortedPages.length} of {totalExpected} complete. Polling every 5 seconds...
               </p>
-              <div className="flex justify-end">
-                <div className="w-6 h-6 border-2 border-black bg-secondary-bg" />
-              </div>
+            </div>
+
+            {/* Show generated pages so far */}
+            <div className="space-y-6">
+              {sortedPages.map((page) => {
+                const imgUrl = page.versions[page.selectedVersionIndex]?.imageUrl;
+                return (
+                  <div key={page.pageNumber} className="bg-white ink-border ink-shadow p-3 max-w-2xl mx-auto">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="bg-primary ink-border px-3 py-1">
+                        <span className="font-headline text-xs font-black text-white uppercase">
+                          Page {page.pageNumber}
+                        </span>
+                      </div>
+                      <span className="font-headline text-xs font-black uppercase text-on-surface-muted">
+                        ✓ Generated
+                      </span>
+                    </div>
+                    {imgUrl && (
+                      <div className="border-4 border-black overflow-hidden" style={{ aspectRatio: "2/3" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={imgUrl} alt={`Page ${page.pageNumber}`} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Pending pages */}
+              {Array.from({ length: totalExpected - sortedPages.length }, (_, i) => (
+                <div key={`pending-${i}`} className="bg-surface-card ink-border ink-shadow p-3 max-w-2xl mx-auto">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="bg-surface-card ink-border px-3 py-1">
+                      <span className="font-headline text-xs font-black text-on-surface-muted uppercase">
+                        Page {sortedPages.length + i + 1}
+                      </span>
+                    </div>
+                    <span className="font-headline text-xs font-black uppercase text-on-surface-muted animate-pulse">
+                      GENERATING...
+                    </span>
+                  </div>
+                  <div className="border-4 border-dashed border-outline-variant bg-surface-low animate-pulse" style={{ aspectRatio: "2/3" }} />
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        ) : isComplete && sortedPages.length > 0 ? (
+          /* ── Complete comic viewer ──────────────── */
+          <>
+            {/* Page navigation row */}
+            <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+              <button
+                onClick={prev}
+                disabled={isFirst}
+                className="bg-primary text-white ink-border px-8 py-4 font-headline font-black text-xl italic uppercase tracking-tight ink-shadow hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                style={{ transform: "rotate(-2deg)" }}
+              >
+                ← PREVIOUS PAGE
+              </button>
+
+              <div
+                className="bg-secondary-bg ink-border px-10 py-4 ink-shadow flex flex-col items-center"
+                style={{ transform: "rotate(1deg)" }}
+              >
+                <span className="font-headline text-black text-xs tracking-widest mb-1 uppercase max-w-xs truncate">
+                  {title}
+                </span>
+                <span className="font-headline font-black text-2xl italic text-black uppercase">
+                  PAGE {currentPage?.pageNumber ?? 1} OF {sortedPages.length}
+                </span>
+              </div>
+
+              <button
+                onClick={next}
+                disabled={isLast}
+                className="bg-primary text-white ink-border px-8 py-4 font-headline font-black text-xl italic uppercase tracking-tight ink-shadow hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+                style={{ transform: "rotate(2deg)" }}
+              >
+                NEXT PAGE →
+              </button>
+            </div>
+
+            {/* Comic page */}
+            {currentPage && (
+              <div className="bg-white ink-border p-3 md:p-5 ink-shadow-lg mb-8 max-w-4xl mx-auto">
+                <div className="border-4 border-black overflow-hidden" style={{ aspectRatio: "2/3" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={currentPage.versions[currentPage.selectedVersionIndex]?.imageUrl}
+                    alt={`Comic page ${currentPage.pageNumber}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Action bar */}
+            <div className="flex justify-center gap-6 flex-wrap">
+              <a
+                href={`/api/comic/${comicId}/export/pdf`}
+                download
+                className="bg-tertiary ink-border px-8 py-4 font-headline font-black text-lg italic uppercase text-on-tertiary tracking-tight ink-shadow hover:scale-105 active:scale-95 transition-all"
+                style={{ transform: "rotate(-1deg)" }}
+              >
+                DOWNLOAD PDF
+              </a>
+            </div>
+          </>
+        ) : (
+          /* ── Empty / unknown state ─────────────── */
+          <div className="flex flex-col items-center justify-center gap-6 py-24">
+            <div className="bg-surface-card ink-border px-8 py-4">
+              <span className="font-headline text-xl font-black uppercase">NO PAGES YET</span>
+            </div>
+            <Link href="/" className="font-headline text-sm font-black uppercase text-primary hover:underline">
+              BACK TO HOME
+            </Link>
+          </div>
+        )}
       </main>
 
-      {/* ── FIXED BOTTOM NAV ────────────────────────────── */}
-
-        <footer className="flex items-center justify-between px-12 py-5 bg-secondary-bg border-t-4 border-black">
+      {/* ── FOOTER ──────────────────────────────────────── */}
+      <footer className="flex items-center justify-between px-12 py-5 bg-secondary-bg border-t-4 border-black">
         <span className="font-headline text-sm font-black uppercase text-black tracking-widest">
           © 2026 DOODLPOP
         </span>
@@ -237,7 +312,6 @@ export default function ComicViewer() {
           Make something awesome.
         </span>
       </footer>
-
     </div>
   );
 }

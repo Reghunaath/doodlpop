@@ -14,13 +14,18 @@
 
 ## 2. Project Structure
 
-Next.js App Router. No monorepo. No separate client/server directories.
+Next.js App Router. Single repo. `src/` is split into three areas: `app/` (Next.js routing), `backend/` (API logic, AI pipeline, storage, types), and `frontend/` (React components).
 
-- All pages live in `src/app/`.
-- All API routes live in `src/app/api/`.
-- Shared types, constants, storage, and AI logic live in `src/lib/`.
-- React components live in `src/components/`, organized by feature (landing, wizard, library, comic-viewer, ui).
-- The `@google/genai` SDK is used server-side only (API routes and `src/lib/ai/`). Never import it in client components.
+- **`src/app/`** — Next.js routing only. Page files owned by the frontend developer. API route files (`src/app/api/`) are thin handlers that import and call logic from `src/backend/`.
+- **`src/backend/`** — All backend logic. Owned by the backend developer.
+  - `src/backend/lib/types.ts` — Shared TypeScript types (source of truth for both devs).
+  - `src/backend/lib/constants.ts` — App-wide constants.
+  - `src/backend/lib/storage.ts` — Storage abstraction (KV + Blob / in-memory).
+  - `src/backend/lib/ai/` — Gemini client, prompts, script generator, image generator.
+  - `src/backend/handlers/` — Actual request handler logic, one file per route group.
+- **`src/frontend/`** — All React components. Owned by the frontend developer.
+  - Organized by feature: `landing/`, `wizard/`, `library/`, `comic-viewer/`, `ui/`.
+- The `@google/genai` SDK is used server-side only (`src/backend/`). Never import it in `src/frontend/` or client components.
 
 ## 3. Technical PRD Is the Source of Truth
 
@@ -70,8 +75,8 @@ The file `doodlpop-technical-prd.md` in the project root contains all technical 
 
 ## 7. AI Integration Rules
 
-- The `@google/genai` SDK must only be instantiated once via a singleton in `src/lib/ai/gemini-client.ts`.
-- All prompt templates live in `src/lib/ai/prompts.ts` as exported functions that accept comic data and return prompt strings. Do not inline prompts in route handlers.
+- The `@google/genai` SDK must only be instantiated once via a singleton in `src/backend/lib/ai/gemini-client.ts`.
+- All prompt templates live in `src/backend/lib/ai/prompts.ts` as exported functions that accept comic data and return prompt strings. Do not inline prompts in route handlers.
 - For text generation (scripts, questions, ideas): use `gemini-2.5-flash`. Always request JSON output and include "Respond with ONLY valid JSON" in the system prompt.
 - For image generation: use `gemini-3-pro-image-preview` with `responseModalities: ["IMAGE"]`, `aspectRatio: "2:3"`, and `imageSize: "1K"`.
 - Never call the Gemini API or Nano Banana Pro from client-side code. All AI calls go through API routes.
@@ -114,7 +119,7 @@ Library page, share via public link, PDF export, production storage (Vercel KV +
 
 - **Local dev:** Use `STORAGE_BACKEND=memory` env var to enable in-memory storage (Map-based). This works because `next dev` runs a persistent Node process.
 - **Production (Vercel):** Use `STORAGE_BACKEND=vercel` to enable Vercel KV + Blob. This is required for deployment since serverless functions are stateless.
-- The storage abstraction in `src/lib/storage.ts` must expose a clean interface. Route handlers import from storage.ts and never call KV or Blob directly.
+- The storage abstraction in `src/backend/lib/storage.ts` must expose a clean interface. Route handlers import from storage.ts and never call KV or Blob directly.
 - Save comic state to KV after every mutation (page generated, status change, version selected). Do not batch saves or defer them.
 - After each page is generated in automated mode, save progress immediately. This ensures partial state survives if the serverless function times out.
 

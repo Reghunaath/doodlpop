@@ -47,3 +47,6 @@ next-env.d.ts
 
 # Local generated PDFs (dev only)
 generated-pdfs/
+
+# Reference images
+references/

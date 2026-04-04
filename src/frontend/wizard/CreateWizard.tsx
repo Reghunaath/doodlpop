@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 
 // ── Hardcoded questions ────────────────────────────────────────────────────
@@ -151,83 +152,13 @@ export default function CreateWizard() {
 
             {/* ── Editor portrait ───────────────────── */}
             <div className="relative w-full">
-              <div className="w-full aspect-square ink-border ink-shadow overflow-hidden relative bg-[#c8d8e8]">
-                {/* Comic-book editor illustration */}
-                <svg
-                  viewBox="0 0 200 200"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-full h-full"
-                >
-                  {/* Background gradient */}
-                  <rect width="200" height="200" fill="#b8cfe0" />
-
-                  {/* Ben-Day dots overlay */}
-                  <pattern id="dots" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
-                    <circle cx="4" cy="4" r="1.2" fill="#000" opacity="0.08" />
-                  </pattern>
-                  <rect width="200" height="200" fill="url(#dots)" />
-
-                  {/* Suit / body */}
-                  <path d="M 20 200 L 20 145 Q 50 135 70 140 L 80 155 L 100 148 L 120 155 L 130 140 Q 150 135 180 145 L 180 200 Z" fill="#1a2550" stroke="#000" strokeWidth="3" />
-
-                  {/* Tie */}
-                  <polygon points="100,148 93,162 100,195 107,162" fill="#cc1122" stroke="#000" strokeWidth="2" />
-                  <polygon points="93,148 107,148 104,156 96,156" fill="#aa0011" stroke="#000" strokeWidth="1.5" />
-
-                  {/* Shirt collar */}
-                  <polygon points="80,140 100,148 100,156 88,145" fill="#f5f5f5" stroke="#000" strokeWidth="2" />
-                  <polygon points="120,140 100,148 100,156 112,145" fill="#f5f5f5" stroke="#000" strokeWidth="2" />
-
-                  {/* Neck */}
-                  <rect x="87" y="118" width="26" height="26" rx="4" fill="#e8b87a" stroke="#000" strokeWidth="3" />
-
-                  {/* Head */}
-                  <ellipse cx="100" cy="88" rx="52" ry="58" fill="#e8b87a" stroke="#000" strokeWidth="4" />
-
-                  {/* Hair */}
-                  <path d="M 50 75 Q 52 38 100 32 Q 148 38 150 75 Q 138 48 100 46 Q 62 48 50 75 Z" fill="#1a1a1a" stroke="#000" strokeWidth="2.5" />
-                  <path d="M 50 75 Q 46 85 48 95" fill="none" stroke="#1a1a1a" strokeWidth="6" strokeLinecap="round" />
-                  <path d="M 150 75 Q 154 85 152 95" fill="none" stroke="#1a1a1a" strokeWidth="6" strokeLinecap="round" />
-
-                  {/* Ear left */}
-                  <ellipse cx="49" cy="92" rx="9" ry="12" fill="#e8b87a" stroke="#000" strokeWidth="3" />
-                  {/* Ear right */}
-                  <ellipse cx="151" cy="92" rx="9" ry="12" fill="#e8b87a" stroke="#000" strokeWidth="3" />
-
-                  {/* Glasses frame left */}
-                  <rect x="58" y="83" width="34" height="22" rx="4" fill="rgba(40,60,100,0.15)" stroke="#000" strokeWidth="3.5" />
-                  {/* Glasses frame right */}
-                  <rect x="108" y="83" width="34" height="22" rx="4" fill="rgba(40,60,100,0.15)" stroke="#000" strokeWidth="3.5" />
-                  {/* Bridge */}
-                  <line x1="92" y1="94" x2="108" y2="94" stroke="#000" strokeWidth="3" />
-                  {/* Temple left */}
-                  <line x1="58" y1="94" x2="49" y2="90" stroke="#000" strokeWidth="3" />
-                  {/* Temple right */}
-                  <line x1="142" y1="94" x2="151" y2="90" stroke="#000" strokeWidth="3" />
-
-                  {/* Eyes */}
-                  <ellipse cx="75" cy="94" rx="9" ry="7" fill="#2a3575" />
-                  <ellipse cx="125" cy="94" rx="9" ry="7" fill="#2a3575" />
-                  {/* Eye shine */}
-                  <circle cx="79" cy="91" r="2.5" fill="#fff" />
-                  <circle cx="129" cy="91" r="2.5" fill="#fff" />
-
-                  {/* Eyebrows */}
-                  <path d="M 58 80 Q 75 74 92 80" stroke="#1a1a1a" strokeWidth="3.5" fill="none" strokeLinecap="round" />
-                  <path d="M 108 80 Q 125 74 142 80" stroke="#1a1a1a" strokeWidth="3.5" fill="none" strokeLinecap="round" />
-
-                  {/* Nose */}
-                  <path d="M 97 106 Q 93 116 97 120 Q 100 122 103 120 Q 107 116 103 106" stroke="#c09050" strokeWidth="2" fill="none" strokeLinecap="round" />
-
-                  {/* Mouth — slight smirk */}
-                  <path d="M 82 132 Q 100 140 118 132" stroke="#000" strokeWidth="3" fill="none" strokeLinecap="round" />
-
-                  {/* Halftone shadow on face */}
-                  <pattern id="faceDots" x="0" y="0" width="5" height="5" patternUnits="userSpaceOnUse">
-                    <circle cx="2.5" cy="2.5" r="0.8" fill="#c09050" opacity="0.4" />
-                  </pattern>
-                  <ellipse cx="100" cy="88" rx="52" ry="58" fill="url(#faceDots)" opacity="0.5" />
-                </svg>
+              <div className="w-full aspect-square ink-border ink-shadow overflow-hidden relative">
+                <Image
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHIAIe6F7HUWdBqByLsrMX2uDXs_bmLMb4fGz37vBLLNTD17bHQ3yIpGQW1fMHmpY9eLFPDJdm-_vhyrRPWOGoypfMMKEfEXKi05Qy-pFTnqf3warTVa_3YXRdBz6MGXw-5CeoHNKLaf08AA3N3rh2zJiiibT8J684BR7s-iyaFaKKOcB0aFrIb6uQFjj8juFPwX_UsDishrxBC6zyll8u12JuxLvVlGp-vLAlYBo8dRcQJn77dHxJ1rERMRC7WCInMc4JWGv7RVs"
+                  alt="Classic silver age comic book editor headshot"
+                  fill
+                  className="object-cover"
+                />
               </div>
 
               {/* EDITOR-IN-CHIEF badge */}

@@ -1,0 +1,162 @@
+// src/backend/lib/ai/prompts.ts
+// All prompt template functions. Accept comic data, return prompt strings.
+
+import { ArtStylePreset, Script, ScriptPage } from "../types";
+import { ART_STYLE_PRESETS, IMAGE_ASPECT_RATIO } from "../constants";
+
+function getArtStyleDescription(
+  artStyle: ArtStylePreset,
+  customStylePrompt?: string
+): string {
+  if (artStyle === "custom") {
+    return customStylePrompt ?? "custom illustration style";
+  }
+  return ART_STYLE_PRESETS[artStyle].promptFragment;
+}
+
+// ---- Stage 1: Follow-Up Question Generation ----
+
+export function followUpQuestionsPrompt(
+  prompt: string,
+  artStyle: ArtStylePreset,
+  pageCount: number
+): string {
+  return `You are a creative comic book editor. Given a user's comic idea, generate up to 5 short follow-up questions that would help personalize the story. Focus on character details, setting specifics, tone, and plot preferences. Do NOT ask about art style or length — those are already decided.
+
+Respond with ONLY a JSON array of objects with "id" and "question" fields. No other text.
+
+Example:
+[
+  {"id": "q1", "question": "What's the main character's personality like?"},
+  {"id": "q2", "question": "Should the ending be happy, bittersweet, or a cliffhanger?"}
+]
+
+User's idea: "${prompt}"
+Art style: "${artStyle}"
+Number of pages: ${pageCount}`;
+}
+
+// ---- Stage 2: Random Idea Generation ----
+
+export function randomIdeaPrompt(): string {
+  return `Generate a single creative, fun, and specific comic book premise in one to two sentences. Be imaginative and varied — mix genres, settings, and characters. Do not repeat common tropes. Return ONLY the premise text, nothing else.`;
+}
+
+// ---- Stage 3: Script Generation ----
+
+export function generateScriptPrompt(
+  prompt: string,
+  artStyle: ArtStylePreset,
+  pageCount: number,
+  followUpAnswers?: Record<string, string>
+): string {
+  const formattedAnswers =
+    followUpAnswers && Object.keys(followUpAnswers).length > 0
+      ? Object.entries(followUpAnswers)
+          .map(([, answer]) => `- ${answer}`)
+          .join("\n")
+      : "No additional details provided.";
+
+  return `You are a professional comic book writer. Write a complete comic script based on the user's input.
+
+Rules:
+- The script MUST have exactly ${pageCount} pages.
+- Each page MUST have between 2 and 6 panels.
+- Each panel MUST include a "description" field with a detailed visual description suitable for an AI image generator. Include character appearances, poses, expressions, camera angles, lighting, and background details.
+- Dialogue should be natural and fit the genre.
+- Captions are optional narrator text.
+- The story must have a clear beginning, middle, and end.
+- Respond with ONLY valid JSON matching this exact structure, no other text:
+
+{
+  "title": "string",
+  "synopsis": "string (2-3 sentences)",
+  "pages": [
+    {
+      "pageNumber": 1,
+      "panels": [
+        {
+          "panelNumber": 1,
+          "description": "Detailed visual description...",
+          "dialogue": [{"speaker": "Name", "text": "What they say"}],
+          "caption": "Optional narrator text or null"
+        }
+      ]
+    }
+  ]
+}
+
+User's idea: "${prompt}"
+Art style: "${artStyle}"
+Number of pages: ${pageCount}
+Additional details from the user:
+${formattedAnswers}`;
+}
+
+// ---- Stage 4: Script Regeneration ----
+
+export function regenerateScriptPrompt(
+  prompt: string,
+  artStyle: ArtStylePreset,
+  pageCount: number,
+  currentScript: Script,
+  feedback: string,
+  followUpAnswers?: Record<string, string>
+): string {
+  const base = generateScriptPrompt(prompt, artStyle, pageCount, followUpAnswers);
+  return `${base}
+
+Here is the current script that the user wants revised:
+${JSON.stringify(currentScript, null, 2)}
+
+The user's feedback on what to change:
+"${feedback}"
+
+Rewrite the script incorporating this feedback while keeping the same structure requirements.`;
+}
+
+// ---- Stage 5: Panel Image Generation ----
+
+export function generatePageImagePrompt(
+  scriptPage: ScriptPage,
+  artStyle: ArtStylePreset,
+  comicTitle: string,
+  totalPages: number,
+  customStylePrompt?: string
+): string {
+  const artStyleDescription = getArtStyleDescription(artStyle, customStylePrompt);
+  const panelCount = scriptPage.panels.length;
+
+  const panelDescriptions = scriptPage.panels
+    .map((panel) => {
+      const dialogueLines =
+        panel.dialogue.length > 0
+          ? panel.dialogue
+              .map((d) => `  Speech bubble — ${d.speaker}: "${d.text}"`)
+              .join("\n")
+          : "  No dialogue.";
+      const caption = panel.caption
+        ? `  Caption box: "${panel.caption}"`
+        : "";
+      return `Panel ${panel.panelNumber}:
+  Visual: ${panel.description}
+${dialogueLines}${caption ? "\n" + caption : ""}`;
+    })
+    .join("\n\n");
+
+  return `Create a single comic book page illustration in ${artStyleDescription} style.
+
+This is page ${scriptPage.pageNumber} of ${totalPages} in a comic called "${comicTitle}".
+
+The page has ${panelCount} panels arranged in a comic book layout:
+
+${panelDescriptions}
+
+Important instructions:
+- Render this as a SINGLE comic book page with clearly defined panel borders.
+- Include speech bubbles with the dialogue text inside each panel.
+- Include caption boxes for narrator text where specified.
+- Maintain consistent character appearances across all panels.
+- The overall style must be: ${artStyleDescription}
+- Use a ${IMAGE_ASPECT_RATIO} aspect ratio.`;
+}

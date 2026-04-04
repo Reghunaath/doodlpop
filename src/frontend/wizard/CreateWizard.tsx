@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import ModeToggle from "./ModeToggle";
+import type { GenerationMode } from "@/backend/lib/types";
 
 // ── Hardcoded questions ────────────────────────────────────────────────────
 
@@ -76,6 +78,7 @@ export default function CreateWizard() {
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [customInput, setCustomInput] = useState("");
+  const [mode, setMode] = useState<GenerationMode>("automated");
 
   const done = currentQ >= QUESTIONS.length;
 
@@ -276,16 +279,21 @@ export default function CreateWizard() {
                 </div>
               </div>
             ) : (
-              /* All done — generate CTA */
-              <div className="flex flex-col items-center gap-4 py-8">
-                <p className="font-headline text-xl font-black uppercase text-on-surface-muted">
-                  Story profile complete!
+              /* All done — mode toggle + generate CTA */
+              <div className="flex flex-col gap-8 py-4">
+                <p className="font-headline text-lg font-black uppercase text-on-surface-muted text-center">
+                  Story profile complete — now choose how to generate:
                 </p>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-primary-dim ink-border translate-x-3 translate-y-3" />
-                  <button className="relative bg-primary ink-border px-16 py-6 font-headline text-3xl font-black italic uppercase text-white tracking-wide hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 cursor-pointer">
-                    GENERATE SCRIPT →
-                  </button>
+
+                <ModeToggle value={mode} onChange={setMode} />
+
+                <div className="flex justify-center pt-2">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-primary-dim ink-border translate-x-3 translate-y-3" />
+                    <button className="relative bg-primary ink-border px-16 py-6 font-headline text-3xl font-black italic uppercase text-white tracking-wide hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 cursor-pointer">
+                      GENERATE SCRIPT →
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

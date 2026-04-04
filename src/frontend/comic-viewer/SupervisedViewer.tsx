@@ -236,10 +236,10 @@ export default function SupervisedViewer() {
                 <div className="relative mt-4">
                   <div className="absolute inset-0 bg-primary-dim ink-border translate-x-3 translate-y-3" />
                   <Link
-                    href="/"
+                    href="/view"
                     className="relative bg-primary ink-border px-14 py-5 font-headline text-2xl font-black italic uppercase text-white tracking-wide hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 block"
                   >
-                    GO TO LIBRARY →
+                    VIEW COMIC →
                   </Link>
                 </div>
               </div>

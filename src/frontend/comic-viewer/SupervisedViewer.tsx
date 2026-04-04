@@ -1,84 +1,154 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import type { Comic, Page } from "@/backend/lib/types";
+import {
+  getComic,
+  generatePage,
+  regeneratePage,
+  selectPageVersion,
+} from "@/frontend/lib/api";
+import { updateSavedComic } from "@/frontend/lib/local-storage";
 
-// ── Placeholder images (lh3.googleusercontent.com is whitelisted) ──────────
+interface SupervisedViewerProps {
+  comicId: string;
+}
 
-const IMG_CITY =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuDaXOS-OMDzDs4FZHgTEFidk6Rnn0cFp1fLk2UoXTEeh8QSJbDDjpeaXivgklHmtM3g3nQfrhyYlPy9NYkJKrdRBxieX1Kf6WPw7AuARRx-F1G-NVIvuG-cA0Q1gW6FYgv_tsFs2magLVa0CRNpoYsCpXc3UkQhYIQDet39_G8cS3rOGDL2cbC8LMCh20bwGa77kvqEGqM0D2J4utoLIgosNnb8iQRRBXscCZK73p2W5J4zUz8LnCdea80LGgmD6rDODkLfAECZ-tvy";
-const IMG_HERO =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuAaInIku4m79ErAUXEZ-NfAmkfQpJNQEctvlEeqjKEtUcnIGAaQgItoGzp1UT_eFaxrfSba71tnI9o77Bqr7_exurj4LcRwas_Hu6rg2yKtEuqlk_ZSYZF_-1UjodLnQyx2RNDLrn20bLfhigQUNcdJxEsFm9ZIWcqrnFiS-wZfak2cu4C8uv43QRwr3TExFcYZFyfUczGxYsgeyxDIKQaK4eO5Chm1CUaKxxaKDwxMOFKSR9FxMUnOL7ogphCMpSqGfj-_Lt9oHMYG";
-const IMG_WIDE =
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBP6nBTNYC10nEXTbuA_NpgMZa45ur15qZyIcDg6KSDIAymX1YxdPOqv6yhco_c6FNyUIPMu2BTajRLgXo0fBUOgIZCTtY6_kfAiNco7Pt4xojpJ3pQ_ACtoDJaCE85z5en2-iuJIwCkm5T_linoAfMzEp5JD3nMa_6kX92dM0W-fP8MMz_T4-TUGh35uNtdqjlhDysz_Fe2_gnfqHRdKhevkz-i03muu3sctgD121Uzb2wGlLRnyrNjVTnUrqLxbYsMPhvmjgJMzmc";
-
-// ── Hardcoded pages ────────────────────────────────────────────────────────
-
-const PAGES = [
-  {
-    pageNumber: 1,
-    caption: "MEANWHILE... IN THE HEART OF NEON CITY!",
-    sfx: "WHOOM!",
-    panelOneCaption: "The Grid Never Sleeps.",
-    dialogue: '"The city never forgives, and neither do I."',
-  },
-  {
-    pageNumber: 2,
-    caption: "THE CHASE BEGINS!",
-    sfx: "KRAKK!",
-    panelOneCaption: "Rooftop. 3 AM. Rain.",
-    dialogue: '"You can\'t outrun the truth, Malware!"',
-  },
-  {
-    pageNumber: 3,
-    caption: "THE FINAL SHOWDOWN!",
-    sfx: "BOOM!",
-    panelOneCaption: "End of the line.",
-    dialogue: '"This ends HERE! Your reign of binary terror is OVER!"',
-  },
-];
-
-// ── Component ──────────────────────────────────────────────────────────────
-
-export default function SupervisedViewer() {
-  const [currentPage, setCurrentPage] = useState(0);
-  const [approvedPages, setApprovedPages] = useState<Set<number>>(new Set());
+export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
+  const [comic, setComic] = useState<Comic | null>(null);
+  const [currentPageNumber, setCurrentPageNumber] = useState(1);
+  const [currentPage, setCurrentPage] = useState<Page | null>(null);
+  const [selectedVersion, setSelectedVersion] = useState(0);
   const [notes, setNotes] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isGeneratingPage, setIsGeneratingPage] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const page = PAGES[currentPage];
-  const isLastPage = currentPage >= PAGES.length - 1;
-
-  // Fake 2-second re-ink delay
+  // Fetch comic on mount
   useEffect(() => {
-    if (!isRegenerating) return;
-    const timer = setTimeout(() => setIsRegenerating(false), 2000);
-    return () => clearTimeout(timer);
-  }, [isRegenerating]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const { comic: c } = await getComic(comicId);
+        if (cancelled) return;
+        setComic(c);
 
-  const handleReink = () => {
+        if (c.status === "complete") {
+          setIsComplete(true);
+          setIsLoading(false);
+          return;
+        }
+
+        // Figure out which page to work on next
+        const generatedPages = c.pages.length;
+        const nextPage = generatedPages + 1;
+        setCurrentPageNumber(nextPage);
+
+        // If there's already a generated page at this position, show it
+        const existingPage = c.pages.find((p) => p.pageNumber === nextPage);
+        if (existingPage) {
+          setCurrentPage(existingPage);
+          setSelectedVersion(existingPage.selectedVersionIndex);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load comic");
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [comicId]);
+
+  const totalPages = comic?.pageCount ?? 0;
+  const isLastPage = currentPageNumber >= totalPages;
+
+  const handleGeneratePage = useCallback(async () => {
+    setIsGeneratingPage(true);
+    setError(null);
+    try {
+      const res = await generatePage(comicId, { pageNumber: currentPageNumber });
+      setCurrentPage(res.page);
+      setSelectedVersion(res.page.selectedVersionIndex);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate page");
+    } finally {
+      setIsGeneratingPage(false);
+    }
+  }, [comicId, currentPageNumber]);
+
+  const handleReink = async () => {
     setIsRegenerating(true);
-    setNotes("");
-  };
-
-  const handleContinue = () => {
-    const next = new Set(approvedPages).add(currentPage);
-    setApprovedPages(next);
-    if (isLastPage) {
-      setIsComplete(true);
-    } else {
-      setCurrentPage((p) => p + 1);
+    setError(null);
+    try {
+      const res = await regeneratePage(comicId, { pageNumber: currentPageNumber });
+      setCurrentPage(res.page);
+      setSelectedVersion(res.page.selectedVersionIndex);
       setNotes("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to regenerate page");
+    } finally {
+      setIsRegenerating(false);
     }
   };
 
+  const handleContinue = async () => {
+    if (!currentPage) return;
+    setIsApproving(true);
+    setError(null);
+    try {
+      await selectPageVersion(comicId, {
+        pageNumber: currentPageNumber,
+        versionIndex: selectedVersion,
+      });
+
+      if (isLastPage) {
+        setIsComplete(true);
+        updateSavedComic(comicId, { status: "complete" });
+      } else {
+        const nextPageNum = currentPageNumber + 1;
+        setCurrentPageNumber(nextPageNum);
+        setCurrentPage(null);
+        setSelectedVersion(0);
+        setNotes("");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to approve page");
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
+  const currentImageUrl = currentPage
+    ? currentPage.versions[selectedVersion]?.imageUrl
+    : null;
+
+  const versionsCount = currentPage?.versions.length ?? 0;
+  const canRegenerate = versionsCount < 4;
+
   const bubbleText = isComplete
     ? "MAGNIFICENT! YOUR MASTERPIECE IS COMPLETE! THE SAGA IS WRITTEN IN INK FOREVER!"
-    : isRegenerating
+    : isGeneratingPage || isRegenerating
     ? "HOLD ON, TRUE BELIEVER! WE'RE INKING A BRAND NEW VERSION RIGHT NOW..."
+    : !currentPage
+    ? "READY TO BRING THIS PAGE TO LIFE? HIT THAT GENERATE BUTTON!"
     : "REVIEW THIS PAGE! LOVE IT? HIT THE SAGA CONTINUES! NOT HAPPY? GIVE NOTES AND RE-INK!";
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface ben-day-dots">
+        <div className="bg-secondary-bg ink-border ink-shadow px-12 py-8 animate-pulse">
+          <span className="font-headline text-3xl font-black uppercase">LOADING...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-surface ben-day-dots">
@@ -116,9 +186,9 @@ export default function SupervisedViewer() {
                 filter: "drop-shadow(4px 4px 0px rgba(186,0,21,1))",
               }}
             >
-              COMIC
+              PAGE
               <br />
-              VIEWER
+              REVIEW
             </h1>
           </div>
 
@@ -139,7 +209,6 @@ export default function SupervisedViewer() {
 
           {/* ── LEFT SIDEBAR ─────────────────────────── */}
           <aside className="lg:col-span-3 flex flex-col items-center gap-8">
-
             {/* Editor portrait */}
             <div className="relative w-full">
               <div className="w-full aspect-square ink-border ink-shadow overflow-hidden relative">
@@ -163,7 +232,7 @@ export default function SupervisedViewer() {
             {/* Speech bubble */}
             <div className="bg-surface-white ink-border ink-shadow p-5 relative speech-bubble-tail-sm w-full mt-4">
               <p className="font-body font-bold text-center leading-snug text-sm uppercase transition-all duration-300">
-                "{bubbleText}"
+                &quot;{bubbleText}&quot;
               </p>
             </div>
 
@@ -177,12 +246,13 @@ export default function SupervisedViewer() {
                 <div className="h-1 flex-1 bg-black" />
               </div>
 
-              {PAGES.map((p, i) => {
-                const isApproved = approvedPages.has(i) || isComplete;
-                const isCurrent = i === currentPage && !isComplete;
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                const generated = comic?.pages.find((p) => p.pageNumber === pageNum);
+                const isApproved = isComplete || (generated && pageNum < currentPageNumber);
+                const isCurrent = pageNum === currentPageNumber && !isComplete;
                 return (
                   <div
-                    key={i}
+                    key={pageNum}
                     className={`flex items-center gap-3 ink-border px-3 py-2 transition-colors duration-200 ${
                       isApproved
                         ? "bg-primary text-white"
@@ -192,11 +262,11 @@ export default function SupervisedViewer() {
                     }`}
                   >
                     <span className="font-headline text-2xl font-black w-8 text-center leading-none">
-                      {isApproved ? "✓" : isCurrent ? "◉" : String(i + 1).padStart(2, "0")}
+                      {isApproved ? "✓" : isCurrent ? "◉" : String(pageNum).padStart(2, "0")}
                     </span>
                     <div>
                       <p className="font-headline text-xs font-black uppercase leading-none">
-                        Page {p.pageNumber}
+                        Page {pageNum}
                       </p>
                       <p className="font-headline text-[10px] uppercase opacity-70 mt-0.5">
                         {isApproved ? "APPROVED" : isCurrent ? "REVIEWING" : "PENDING"}
@@ -214,9 +284,7 @@ export default function SupervisedViewer() {
             {isComplete ? (
               /* ── Completion screen ───────────────── */
               <div className="flex flex-col items-center justify-center gap-8 py-16 text-center">
-                <div
-                  className="w-40 h-40 bg-secondary-bg ink-border flex items-center justify-center comic-burst"
-                >
+                <div className="w-40 h-40 bg-secondary-bg ink-border flex items-center justify-center comic-burst">
                   <span className="font-headline text-5xl font-black text-black">★</span>
                 </div>
 
@@ -230,13 +298,13 @@ export default function SupervisedViewer() {
                 </h2>
 
                 <p className="font-body text-on-surface-muted text-sm">
-                  All {PAGES.length} pages approved. Your masterpiece is written in ink forever.
+                  All {totalPages} pages approved. Your masterpiece is written in ink forever.
                 </p>
 
                 <div className="relative mt-4">
                   <div className="absolute inset-0 bg-primary-dim ink-border translate-x-3 translate-y-3" />
                   <Link
-                    href="/view"
+                    href={`/comic/${comicId}`}
                     className="relative bg-primary ink-border px-14 py-5 font-headline text-2xl font-black italic uppercase text-white tracking-wide hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 block"
                   >
                     VIEW COMIC →
@@ -245,124 +313,158 @@ export default function SupervisedViewer() {
               </div>
             ) : (
               <>
-                {/* ── Comic panel frame ─────────────── */}
-                <div className="relative mt-6">
-                  {/* Caption badge */}
-                  <div
-                    className="absolute -top-4 -left-2 z-10 bg-secondary-bg ink-border px-4 py-2 font-headline font-black italic text-sm ink-shadow-sm"
-                    style={{ transform: "rotate(-2deg)" }}
-                  >
-                    {page.caption}
+                {/* Error banner */}
+                {error && (
+                  <div className="bg-primary ink-border px-6 py-2" style={{ transform: "rotate(-1deg)" }}>
+                    <p className="font-headline text-sm font-black text-white uppercase">{error}</p>
                   </div>
+                )}
 
-                  {/* White comic page frame */}
-                  <div className="bg-white ink-border ink-shadow-lg p-3 grid grid-cols-2 gap-3">
+                {/* Page indicator */}
+                <div className="text-center">
+                  <div className="bg-secondary-bg ink-border ink-shadow-sm px-6 py-2 inline-block" style={{ transform: "rotate(1deg)" }}>
+                    <span className="font-headline text-lg font-black uppercase">
+                      Page {currentPageNumber} of {totalPages}
+                    </span>
+                  </div>
+                </div>
 
-                    {/* Panel 1 — top left: establishing shot */}
-                    <div className="relative h-52 border-4 border-black overflow-hidden">
-                      <Image
-                        src={IMG_CITY}
-                        alt="Comic panel — establishing shot"
-                        fill
-                        className="object-cover"
-                        style={{ filter: "contrast(1.2) saturate(1.4)" }}
-                      />
-                      <div className="absolute bottom-3 left-3 bg-white border-2 border-black px-2 py-1 font-headline font-bold text-xs uppercase -rotate-1">
-                        {page.panelOneCaption}
-                      </div>
-                    </div>
-
-                    {/* Panel 2 — top right: action close-up with SFX burst */}
-                    <div className="relative h-52 border-4 border-black overflow-hidden">
-                      <Image
-                        src={IMG_HERO}
-                        alt="Comic panel — action close-up"
-                        fill
-                        className="object-cover"
-                        style={{ filter: "contrast(1.25) saturate(1.5)" }}
-                      />
-                      <div
-                        className="absolute top-3 right-3 comic-burst bg-primary text-white font-headline font-black flex items-center justify-center w-20 h-20 text-lg border-4 border-black"
-                        style={{ transform: "rotate(-12deg)", boxShadow: "4px 4px 0px 0px #000" }}
+                {/* Generate button (if page not yet generated) */}
+                {!currentPage && !isGeneratingPage && (
+                  <div className="flex justify-center py-12">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-primary-dim ink-border translate-x-3 translate-y-3" />
+                      <button
+                        onClick={handleGeneratePage}
+                        className="relative bg-primary ink-border px-14 py-6 font-headline text-3xl font-black italic uppercase text-white tracking-wide hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 cursor-pointer"
                       >
-                        {page.sfx}
+                        GENERATE PAGE {currentPageNumber}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Generating overlay */}
+                {isGeneratingPage && (
+                  <div className="flex flex-col items-center justify-center gap-6 py-16">
+                    <div className="bg-secondary-bg ink-border ink-shadow px-12 py-8 animate-pulse" style={{ transform: "rotate(-1deg)" }}>
+                      <span className="font-headline text-3xl font-black uppercase">
+                        GENERATING PAGE {currentPageNumber}...
+                      </span>
+                    </div>
+                    <p className="font-body text-sm text-on-surface-muted italic">
+                      Your AI artist is drawing this page. This may take a moment...
+                    </p>
+                  </div>
+                )}
+
+                {/* Generated page image */}
+                {currentPage && currentImageUrl && (
+                  <>
+                    <div className="relative">
+                      {/* Comic page frame */}
+                      <div className="bg-white ink-border ink-shadow-lg p-3">
+                        <div className="relative w-full border-4 border-black overflow-hidden" style={{ aspectRatio: "2/3" }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={currentImageUrl}
+                            alt={`Comic page ${currentPageNumber}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Regenerating overlay */}
+                      {isRegenerating && (
+                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20">
+                          <div
+                            className="bg-primary ink-border px-10 py-5 text-white font-headline text-3xl font-black italic animate-pulse"
+                            style={{ transform: "rotate(-2deg)" }}
+                          >
+                            RE-INKING...
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Version thumbnails */}
+                    {versionsCount > 1 && (
+                      <div className="flex gap-3 items-center flex-wrap">
+                        <span className="font-headline text-xs font-black uppercase text-on-surface-muted">
+                          VERSIONS:
+                        </span>
+                        {currentPage.versions.map((v, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setSelectedVersion(i)}
+                            className={`w-16 h-24 ink-border overflow-hidden cursor-pointer transition-all ${
+                              selectedVersion === i ? "ring-4 ring-primary scale-110" : "opacity-60 hover:opacity-100"
+                            }`}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={v.imageUrl}
+                              alt={`Version ${i + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Director's Notes */}
+                    <div className="relative pt-3">
+                      <div className="absolute -top-3 left-6 bg-surface-white ink-border px-3 py-1 font-headline text-xs font-black uppercase z-10">
+                        DIRECTOR&apos;S NOTES
+                      </div>
+                      <div className="bg-surface-white ink-border ink-shadow p-6">
+                        <textarea
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          disabled={isRegenerating}
+                          rows={3}
+                          placeholder="REWRITE THE DESTINY... (e.g. 'More lightning! Make the villain a giant robot!')"
+                          className="w-full bg-surface-low ink-border px-4 py-3 font-body text-base outline-none focus:border-primary transition-colors resize-none placeholder:text-on-surface-muted/60 placeholder:italic disabled:opacity-40"
+                        />
                       </div>
                     </div>
 
-                    {/* Panel 3 — bottom: wide dramatic shot with dialogue bubble */}
-                    <div className="col-span-2 relative h-64 border-4 border-black overflow-hidden">
-                      <Image
-                        src={IMG_WIDE}
-                        alt="Comic panel — wide dramatic shot"
-                        fill
-                        className="object-cover"
-                        style={{ filter: "contrast(1.25) saturate(1.5)" }}
-                      />
-                      {/* Dialogue speech bubble */}
-                      <div className="absolute bottom-5 right-6 max-w-[55%] bg-white border-4 border-black px-4 py-3 font-headline font-bold text-sm text-center rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                        {page.dialogue}
+                    {/* Regeneration count */}
+                    {versionsCount > 1 && (
+                      <p className="text-center font-headline text-xs font-black uppercase text-on-surface-muted">
+                        {versionsCount - 1} of 3 regenerations used
+                      </p>
+                    )}
+
+                    {/* Action buttons */}
+                    <div className="flex flex-wrap justify-center items-center gap-8 pt-2">
+                      {/* RE-INK! */}
+                      <div className="relative">
+                        <div className={`absolute inset-0 bg-primary-dim ink-border translate-x-2 translate-y-2 transition-opacity ${!canRegenerate || isRegenerating ? "opacity-30" : ""}`} />
+                        <button
+                          onClick={handleReink}
+                          disabled={!canRegenerate || isRegenerating}
+                          className="relative bg-primary text-white ink-border px-10 py-5 font-headline text-3xl font-black italic uppercase tracking-tight hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 cursor-pointer"
+                        >
+                          RE-INK!
+                        </button>
+                      </div>
+
+                      {/* THE SAGA CONTINUES / WRAP IT UP */}
+                      <div className="relative">
+                        <div className={`absolute inset-0 bg-on-secondary-container ink-border translate-x-2 translate-y-2 transition-opacity ${isRegenerating || isApproving ? "opacity-30" : ""}`} />
+                        <button
+                          onClick={handleContinue}
+                          disabled={isRegenerating || isApproving}
+                          className="relative bg-secondary-bg text-black ink-border px-8 py-5 font-headline text-xl font-black italic uppercase tracking-tight hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 cursor-pointer flex items-center gap-3"
+                        >
+                          {isApproving ? "SAVING..." : isLastPage ? "WRAP IT UP!" : "THE SAGA CONTINUES..."}
+                          <span className="text-2xl leading-none">›</span>
+                        </button>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Regenerating overlay */}
-                  {isRegenerating && (
-                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20">
-                      <div
-                        className="bg-primary ink-border px-10 py-5 text-white font-headline text-3xl font-black italic animate-pulse"
-                        style={{ transform: "rotate(-2deg)" }}
-                      >
-                        RE-INKING...
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* ── Director's Notes ──────────────── */}
-                <div className="relative pt-3">
-                  <div className="absolute -top-3 left-6 bg-surface-white ink-border px-3 py-1 font-headline text-xs font-black uppercase z-10">
-                    DIRECTOR&apos;S NOTES
-                  </div>
-                  <div className="bg-surface-white ink-border ink-shadow p-6">
-                    <textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      disabled={isRegenerating}
-                      rows={3}
-                      placeholder="REWRITE THE DESTINY... (e.g. 'More lightning! Make the villain a giant robot!')"
-                      className="w-full bg-surface-low ink-border px-4 py-3 font-body text-base outline-none focus:border-primary transition-colors resize-none placeholder:text-on-surface-muted/60 placeholder:italic disabled:opacity-40"
-                    />
-                  </div>
-                </div>
-
-                {/* ── Action buttons ────────────────── */}
-                <div className="flex flex-wrap justify-center items-center gap-8 pt-2">
-
-                  {/* RE-INK! */}
-                  <div className="relative">
-                    <div className={`absolute inset-0 bg-primary-dim ink-border translate-x-2 translate-y-2 transition-opacity ${!notes.trim() || isRegenerating ? "opacity-30" : ""}`} />
-                    <button
-                      onClick={handleReink}
-                      disabled={!notes.trim() || isRegenerating}
-                      className="relative bg-primary text-white ink-border px-10 py-5 font-headline text-3xl font-black italic uppercase tracking-tight hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 cursor-pointer"
-                    >
-                      RE-INK!
-                    </button>
-                  </div>
-
-                  {/* THE SAGA CONTINUES / WRAP IT UP */}
-                  <div className="relative">
-                    <div className={`absolute inset-0 bg-on-secondary-container ink-border translate-x-2 translate-y-2 transition-opacity ${isRegenerating ? "opacity-30" : ""}`} />
-                    <button
-                      onClick={handleContinue}
-                      disabled={isRegenerating}
-                      className="relative bg-secondary-bg text-black ink-border px-8 py-5 font-headline text-xl font-black italic uppercase tracking-tight hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 cursor-pointer flex items-center gap-3"
-                    >
-                      {isLastPage ? "WRAP IT UP!" : "THE SAGA CONTINUES..."}
-                      <span className="text-2xl leading-none">›</span>
-                    </button>
-                  </div>
-                </div>
+                  </>
+                )}
               </>
             )}
           </section>

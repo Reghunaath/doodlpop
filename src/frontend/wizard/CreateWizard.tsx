@@ -1,95 +1,112 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-
-// ── Hardcoded questions ────────────────────────────────────────────────────
-
-const QUESTIONS = [
-  {
-    id: 1,
-    label: "Question 1: The Protagonist",
-    question: "Who leads your story into battle?",
-    subtext:
-      "Every legendary comic needs an unforgettable face on the cover.",
-    options: ["HUMAN", "ROBOT", "ANIMAL", "ALIEN"],
-  },
-  {
-    id: 2,
-    label: "Question 2: The Tone",
-    question: "What's the mood of your comic?",
-    subtext: "Set the atmosphere before the first panel is even drawn.",
-    options: ["ACTION!", "COMEDY", "MYSTERY", "DRAMA"],
-  },
-  {
-    id: 3,
-    label: "Question 3: The Setting",
-    question: "Where does your story unfold?",
-    subtext: "The world around your hero shapes every scene.",
-    options: ["CITY", "OUTER SPACE", "FANTASY REALM", "WASTELAND"],
-  },
-  {
-    id: 4,
-    label: "Question 4: The Motivation",
-    question: "What pushes your hero forward?",
-    subtext: "A great protagonist always has something to fight for.",
-    options: ["JUSTICE!", "LOVE", "REVENGE!", "SURVIVAL"],
-  },
-];
-
-// Cycles through 4 comic-book colours for option buttons
-const OPTION_STYLES = [
-  {
-    bg: "bg-secondary-bg",
-    text: "text-black",
-    offset: "bg-on-secondary-container",
-    rotate: "rotate-2",
-  },
-  {
-    bg: "bg-tertiary-container",
-    text: "text-on-tertiary-container",
-    offset: "bg-tertiary-dim",
-    rotate: "-rotate-1",
-  },
-  {
-    bg: "bg-primary",
-    text: "text-white",
-    offset: "bg-primary-dim",
-    rotate: "rotate-1",
-  },
-  {
-    bg: "bg-surface-white",
-    text: "text-on-surface",
-    offset: "bg-surface-card",
-    rotate: "-rotate-2",
-  },
-];
-
-// ── Component ──────────────────────────────────────────────────────────────
+import type { FollowUpQuestion } from "@/backend/lib/types";
+import { getComic, refineComic } from "@/frontend/lib/api";
 
 export default function CreateWizard() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const prompt = searchParams.get("prompt") ?? "";
+  const comicId = searchParams.get("id");
 
+  const [questions, setQuestions] = useState<FollowUpQuestion[]>([]);
   const [currentQ, setCurrentQ] = useState(0);
-  const [answers, setAnswers] = useState<string[]>([]);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [customInput, setCustomInput] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const done = currentQ >= QUESTIONS.length;
+  // Redirect if no comic ID
+  useEffect(() => {
+    if (!comicId) {
+      router.replace("/");
+    }
+  }, [comicId, router]);
+
+  // Fetch comic to get follow-up questions
+  useEffect(() => {
+    if (!comicId) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const { comic } = await getComic(comicId);
+        if (cancelled) return;
+
+        const qs = comic.followUpQuestions ?? [];
+        setQuestions(qs);
+
+        // If no questions, skip straight to script
+        if (qs.length === 0) {
+          await refineComic(comicId, { answers: {} });
+          router.replace(`/script/${comicId}`);
+          return;
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load comic");
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [comicId, router]);
+
+  const done = questions.length > 0 && currentQ >= questions.length;
 
   const handleAnswer = (answer: string) => {
-    setAnswers((prev) => [...prev, answer]);
+    const q = questions[currentQ];
+    setAnswers((prev) => ({ ...prev, [q.id]: answer }));
     setCurrentQ((prev) => prev + 1);
     setCustomInput("");
   };
 
   const handleCustomSubmit = () => {
     if (!customInput.trim()) return;
-    handleAnswer(customInput.trim().toUpperCase());
+    handleAnswer(customInput.trim());
   };
+
+  const handleSkipAll = async () => {
+    if (!comicId) return;
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await refineComic(comicId, { answers: {} });
+      router.push(`/script/${comicId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit");
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmitAll = async () => {
+    if (!comicId) return;
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await refineComic(comicId, { answers });
+      router.push(`/script/${comicId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit");
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!comicId) return null;
+
+  const bubbleText = isLoading
+    ? "HOLD ON, TRUE BELIEVER! I'M COOKING UP THE PERFECT QUESTIONS FOR YOUR STORY..."
+    : error
+    ? error
+    : done
+    ? "EXCELLENT WORK! YOUR STORY PROFILE IS COMPLETE — LET'S WRITE THAT SCRIPT!"
+    : "LISTEN UP, TRUE BELIEVER! WE NEED THE SCOOP ON YOUR NEXT BIG HERO! ANSWER ME TRUTHFULLY!";
 
   return (
     <div className="min-h-screen flex flex-col bg-surface ben-day-dots">
@@ -150,7 +167,6 @@ export default function CreateWizard() {
 
           {/* ── LEFT SIDEBAR ─────────────────────────── */}
           <aside className="lg:col-span-3 flex flex-col items-center gap-8">
-
             {/* ── Editor portrait ───────────────────── */}
             <div className="relative w-full">
               <div className="w-full aspect-square ink-border ink-shadow overflow-hidden relative">
@@ -161,8 +177,6 @@ export default function CreateWizard() {
                   className="object-cover"
                 />
               </div>
-
-              {/* EDITOR-IN-CHIEF badge */}
               <div
                 className="absolute -bottom-5 left-1/2 bg-secondary-bg ink-border ink-shadow-sm px-4 py-1 whitespace-nowrap"
                 style={{ transform: "translateX(-50%) rotate(-5deg)" }}
@@ -176,152 +190,171 @@ export default function CreateWizard() {
             {/* ── Speech bubble ─────────────────────── */}
             <div className="bg-surface-white ink-border ink-shadow p-5 relative speech-bubble-tail-sm w-full mt-4">
               <p className="font-body font-bold text-center leading-snug text-sm uppercase">
-                "LISTEN UP, TRUE BELIEVER! WE NEED THE SCOOP ON YOUR NEXT BIG HERO! ANSWER ME TRUTHFULLY!"
+                &quot;{bubbleText}&quot;
               </p>
             </div>
+
+            {/* Skip All button */}
+            {!done && !isLoading && questions.length > 0 && (
+              <button
+                type="button"
+                onClick={handleSkipAll}
+                disabled={isSubmitting}
+                className="w-full bg-surface-card ink-border px-4 py-3 font-headline text-sm font-black uppercase text-on-surface-muted hover:text-on-surface transition-colors cursor-pointer disabled:opacity-50"
+              >
+                SKIP ALL QUESTIONS →
+              </button>
+            )}
           </aside>
 
           {/* ── CHAT CANVAS ──────────────────────────── */}
           <section className="lg:col-span-9 space-y-8">
 
-            {/* Previous Q&A pairs */}
-            {answers.map((answer, i) => (
-              <div key={i} className="space-y-4">
-                {/* Question bubble */}
-                <div className="flex justify-start">
-                  <div className="max-w-[80%] bg-surface-white ink-border ink-shadow p-5">
-                    <p className="font-headline text-sm uppercase text-primary mb-1">
-                      {QUESTIONS[i].label}
-                    </p>
-                    <p className="font-body text-base italic text-on-surface">
-                      "{QUESTIONS[i].question}"
-                    </p>
-                  </div>
-                </div>
-
-                {/* Answer bubble */}
-                <div className="flex justify-end">
-                  <div
-                    className="bg-tertiary-container ink-border ink-shadow-sm px-6 py-3"
-                    style={{ transform: "rotate(1deg)" }}
-                  >
-                    <span className="font-headline text-[10px] uppercase text-on-tertiary-container/60 block mb-0.5">
-                      Your Choice
-                    </span>
-                    <p className="font-headline text-2xl font-black uppercase text-on-tertiary-container">
-                      {answer}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {/* Active question or done */}
-            {!done ? (
-              <div className="flex justify-start">
-                <div className="w-full bg-surface-white ink-border ink-shadow p-8">
-                  <p className="font-headline text-lg uppercase text-primary mb-1">
-                    {QUESTIONS[currentQ].label}
-                  </p>
-                  <p className="font-body text-xl font-bold text-on-surface mb-1">
-                    "{QUESTIONS[currentQ].question}"
-                  </p>
-                  <p className="font-body text-sm italic text-on-surface-muted mb-8">
-                    {QUESTIONS[currentQ].subtext}
-                  </p>
-
-                  {/* Option buttons */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                    {QUESTIONS[currentQ].options.map((opt, i) => {
-                      const s = OPTION_STYLES[i % OPTION_STYLES.length];
-                      return (
-                        <div key={opt} className="relative">
-                          <div
-                            className={`absolute inset-0 ${s.offset} ink-border translate-x-2 translate-y-2`}
-                          />
-                          <button
-                            onClick={() => handleAnswer(opt)}
-                            className={`relative w-full py-5 px-2 ${s.bg} ${s.text} ink-border font-headline text-lg font-black uppercase tracking-tight transition-transform duration-75 hover:-translate-y-0.5 hover:-translate-x-0.5 active:translate-x-0 active:translate-y-0 cursor-pointer ${s.rotate}`}
-                          >
-                            {opt}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Custom input */}
-                  <div className="relative pt-5 border-t-4 border-dashed border-outline-variant">
-                    <label className="font-headline text-[10px] uppercase absolute -top-3 left-4 bg-surface-white px-2 font-black text-on-surface-muted">
-                      OR WRITE YOUR OWN...
-                    </label>
-                    <div className="flex gap-3">
-                      <input
-                        type="text"
-                        value={customInput}
-                        onChange={(e) => setCustomInput(e.target.value)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" && handleCustomSubmit()
-                        }
-                        placeholder="Type your answer here..."
-                        className="flex-1 bg-surface-low ink-border px-4 py-3 font-body text-base outline-none focus:border-primary transition-colors"
-                      />
-                      <button
-                        onClick={handleCustomSubmit}
-                        className="bg-ink text-white ink-border px-5 py-3 font-headline font-black text-lg hover:bg-primary transition-colors cursor-pointer"
-                      >
-                        ▶
-                      </button>
-                    </div>
-                  </div>
+            {isLoading ? (
+              <div className="flex justify-center py-16">
+                <div className="bg-secondary-bg ink-border ink-shadow px-10 py-6 animate-pulse">
+                  <span className="font-headline text-2xl font-black uppercase">
+                    LOADING QUESTIONS...
+                  </span>
                 </div>
               </div>
             ) : (
-              /* All done — generate CTA */
-              <div className="flex flex-col gap-8 py-4">
-                <p className="font-headline text-lg font-black uppercase text-on-surface-muted text-center">
-                  Story profile complete — ready to write your script!
-                </p>
+              <>
+                {/* Previous Q&A pairs */}
+                {questions.slice(0, currentQ).map((q, i) => (
+                  <div key={q.id} className="space-y-4">
+                    {/* Question bubble */}
+                    <div className="flex justify-start">
+                      <div className="max-w-[80%] bg-surface-white ink-border ink-shadow p-5">
+                        <p className="font-headline text-sm uppercase text-primary mb-1">
+                          Question {i + 1} of {questions.length}
+                        </p>
+                        <p className="font-body text-base italic text-on-surface">
+                          &quot;{q.question}&quot;
+                        </p>
+                      </div>
+                    </div>
 
-                <div className="flex justify-center pt-2">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-primary-dim ink-border translate-x-3 translate-y-3" />
-                    <button
-                      onClick={() => router.push(`/script?answers=${encodeURIComponent(JSON.stringify(answers))}`)}
-                      className="relative bg-primary ink-border px-16 py-6 font-headline text-3xl font-black italic uppercase text-white tracking-wide hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 cursor-pointer"
-                    >
-                      GENERATE SCRIPT →
-                    </button>
+                    {/* Answer bubble */}
+                    <div className="flex justify-end">
+                      <div
+                        className="bg-tertiary-container ink-border ink-shadow-sm px-6 py-3"
+                        style={{ transform: "rotate(1deg)" }}
+                      >
+                        <span className="font-headline text-[10px] uppercase text-on-tertiary-container/60 block mb-0.5">
+                          Your Answer
+                        </span>
+                        <p className="font-headline text-lg font-black text-on-tertiary-container">
+                          {answers[q.id]}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                ))}
+
+                {/* Active question or done */}
+                {!done ? (
+                  <div className="flex justify-start">
+                    <div className="w-full bg-surface-white ink-border ink-shadow p-8">
+                      <p className="font-headline text-lg uppercase text-primary mb-1">
+                        Question {currentQ + 1} of {questions.length}
+                      </p>
+                      <p className="font-body text-xl font-bold text-on-surface mb-1">
+                        &quot;{questions[currentQ].question}&quot;
+                      </p>
+                      <p className="font-body text-sm italic text-on-surface-muted mb-8">
+                        Type your answer below, or skip to move on.
+                      </p>
+
+                      {/* Text input for answer */}
+                      <div className="relative pt-5 border-t-4 border-dashed border-outline-variant">
+                        <label className="font-headline text-[10px] uppercase absolute -top-3 left-4 bg-surface-white px-2 font-black text-on-surface-muted">
+                          YOUR ANSWER...
+                        </label>
+                        <div className="flex gap-3">
+                          <input
+                            type="text"
+                            value={customInput}
+                            onChange={(e) => setCustomInput(e.target.value)}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" && handleCustomSubmit()
+                            }
+                            placeholder="Type your answer here..."
+                            className="flex-1 bg-surface-low ink-border px-4 py-3 font-body text-base outline-none focus:border-primary transition-colors"
+                          />
+                          <button
+                            onClick={handleCustomSubmit}
+                            className="bg-ink text-white ink-border px-5 py-3 font-headline font-black text-lg hover:bg-primary transition-colors cursor-pointer"
+                          >
+                            ▶
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Skip this question */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCurrentQ((prev) => prev + 1);
+                          setCustomInput("");
+                        }}
+                        className="mt-4 font-headline text-xs font-black uppercase text-on-surface-muted hover:text-primary transition-colors cursor-pointer"
+                      >
+                        SKIP THIS QUESTION →
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* All done — generate CTA */
+                  <div className="flex flex-col gap-8 py-4">
+                    <p className="font-headline text-lg font-black uppercase text-on-surface-muted text-center">
+                      Story profile complete — ready to write your script!
+                    </p>
+
+                    <div className="flex justify-center pt-2">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-primary-dim ink-border translate-x-3 translate-y-3" />
+                        <button
+                          onClick={handleSubmitAll}
+                          disabled={isSubmitting}
+                          className="relative bg-primary ink-border px-16 py-6 font-headline text-3xl font-black italic uppercase text-white tracking-wide hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isSubmitting ? "SUBMITTING..." : "GENERATE SCRIPT →"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── PROGRESS INDICATOR ───────────────── */}
+                {questions.length > 0 && (
+                  <div className="flex items-center justify-center gap-2 pt-6">
+                    {questions.map((q, i) => (
+                      <div key={q.id} className="flex items-center gap-2">
+                        <div
+                          className={`w-12 h-12 ink-border flex items-center justify-center font-headline text-xl font-black transition-all ${
+                            i < currentQ
+                              ? "bg-primary text-white"
+                              : i === currentQ
+                              ? "bg-secondary-bg text-black"
+                              : "bg-surface-card text-on-surface-muted opacity-50"
+                          }`}
+                        >
+                          {i < currentQ ? "✓" : i + 1}
+                        </div>
+                        {i < questions.length - 1 && (
+                          <div
+                            className={`h-1 w-10 transition-colors ${
+                              i < currentQ ? "bg-ink" : "bg-outline-variant"
+                            }`}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
-
-            {/* ── PROGRESS INDICATOR ───────────────── */}
-            <div className="flex items-center justify-center gap-2 pt-6">
-              {QUESTIONS.map((q, i) => (
-                <div key={q.id} className="flex items-center gap-2">
-                  <div
-                    className={`w-12 h-12 ink-border flex items-center justify-center font-headline text-xl font-black transition-all ${
-                      i < currentQ
-                        ? "bg-primary text-white"
-                        : i === currentQ
-                        ? "bg-secondary-bg text-black"
-                        : "bg-surface-card text-on-surface-muted opacity-50"
-                    }`}
-                  >
-                    {i < currentQ ? "✓" : i + 1}
-                  </div>
-                  {i < QUESTIONS.length - 1 && (
-                    <div
-                      className={`h-1 w-10 transition-colors ${
-                        i < currentQ ? "bg-ink" : "bg-outline-variant"
-                      }`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
           </section>
         </div>
       </main>

@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 const PAGE_MIN = 1;
 const PAGE_MAX = 15;
 
@@ -24,9 +22,12 @@ function getLabel(n: number): string {
   return "";
 }
 
-export default function PageSlider() {
-  const [pages, setPages] = useState(4);
+interface PageSliderProps {
+  pages: number;
+  onPagesChange: (n: number) => void;
+}
 
+export default function PageSlider({ pages, onPagesChange }: PageSliderProps) {
   return (
     <section className="px-4 pb-20">
       <div className="max-w-5xl mx-auto">
@@ -86,7 +87,7 @@ export default function PageSlider() {
                 min={PAGE_MIN}
                 max={PAGE_MAX}
                 value={pages}
-                onChange={(e) => setPages(Number(e.target.value))}
+                onChange={(e) => onPagesChange(Number(e.target.value))}
                 className="comic-slider w-full mb-4"
                 aria-label="Number of pages"
               />
@@ -97,7 +98,7 @@ export default function PageSlider() {
                   <button
                     key={n}
                     type="button"
-                    onClick={() => setPages(n)}
+                    onClick={() => onPagesChange(n)}
                     className={`font-headline text-xs font-black transition-colors cursor-pointer ${
                       pages === n ? "text-primary" : "text-on-surface-muted hover:text-on-surface"
                     }`}

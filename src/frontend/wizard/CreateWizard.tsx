@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import ModeToggle from "./ModeToggle";
-import type { GenerationMode } from "@/backend/lib/types";
 
 // ── Hardcoded questions ────────────────────────────────────────────────────
 
@@ -73,12 +71,12 @@ const OPTION_STYLES = [
 
 export default function CreateWizard() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const prompt = searchParams.get("prompt") ?? "";
 
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [customInput, setCustomInput] = useState("");
-  const [mode, setMode] = useState<GenerationMode>("automated");
 
   const done = currentQ >= QUESTIONS.length;
 
@@ -279,18 +277,19 @@ export default function CreateWizard() {
                 </div>
               </div>
             ) : (
-              /* All done — mode toggle + generate CTA */
+              /* All done — generate CTA */
               <div className="flex flex-col gap-8 py-4">
                 <p className="font-headline text-lg font-black uppercase text-on-surface-muted text-center">
-                  Story profile complete — now choose how to generate:
+                  Story profile complete — ready to write your script!
                 </p>
-
-                <ModeToggle value={mode} onChange={setMode} />
 
                 <div className="flex justify-center pt-2">
                   <div className="relative">
                     <div className="absolute inset-0 bg-primary-dim ink-border translate-x-3 translate-y-3" />
-                    <button className="relative bg-primary ink-border px-16 py-6 font-headline text-3xl font-black italic uppercase text-white tracking-wide hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 cursor-pointer">
+                    <button
+                      onClick={() => router.push(`/script?answers=${encodeURIComponent(JSON.stringify(answers))}`)}
+                      className="relative bg-primary ink-border px-16 py-6 font-headline text-3xl font-black italic uppercase text-white tracking-wide hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 cursor-pointer"
+                    >
                       GENERATE SCRIPT →
                     </button>
                   </div>

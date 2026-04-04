@@ -37,7 +37,7 @@ export default function ModeToggle({ value, onChange }: ModeToggleProps) {
         >
           {/* Active indicator starburst */}
           {supervised && (
-            <div className="absolute -top-4 -right-4 w-10 h-10 bg-primary ink-border flex items-center justify-center z-20"
+            <div className="absolute -top-4 -right-4 w-10 h-10 bg-tertiary ink-border flex items-center justify-center z-20"
               style={{ clipPath: "polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)" }}
             >
               <span className="sr-only">active</span>
@@ -67,13 +67,13 @@ export default function ModeToggle({ value, onChange }: ModeToggleProps) {
           </div>
         </button>
 
-        {/* VS badge — red */}
+        {/* VS badge — blue */}
         <div className="relative z-20 flex items-center justify-center w-0">
           <div
-            className="absolute bg-primary ink-border w-9 h-9 flex items-center justify-center"
+            className="absolute bg-tertiary ink-border w-9 h-9 flex items-center justify-center"
             style={{ transform: "rotate(12deg)" }}
           >
-            <span className="font-headline text-white text-xs font-black uppercase leading-none">
+            <span className="font-headline text-on-tertiary text-xs font-black uppercase leading-none">
               VS
             </span>
           </div>
@@ -85,14 +85,14 @@ export default function ModeToggle({ value, onChange }: ModeToggleProps) {
           onClick={() => onChange("automated")}
           className={`relative flex-1 p-5 ink-border text-left transition-all duration-150 cursor-pointer group ${
             !supervised
-              ? "bg-tertiary text-on-tertiary -translate-y-1 ink-shadow z-10"
+              ? "bg-primary text-white -translate-y-1 ink-shadow z-10"
               : "bg-surface-card text-on-surface-muted hover:-translate-y-0.5"
           }`}
           style={!supervised ? { transform: "rotate(1deg) translateY(-4px)" } : {}}
         >
           {/* Active indicator starburst */}
           {!supervised && (
-            <div className="absolute -top-4 -left-4 w-10 h-10 bg-primary ink-border flex items-center justify-center z-20"
+            <div className="absolute -top-4 -left-4 w-10 h-10 bg-tertiary ink-border flex items-center justify-center z-20"
               style={{ clipPath: "polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)" }}
             >
               <span className="sr-only">active</span>
@@ -113,7 +113,7 @@ export default function ModeToggle({ value, onChange }: ModeToggleProps) {
               </p>
               <p
                 className={`font-body text-xs leading-relaxed mt-1 ${
-                  !supervised ? "text-on-tertiary/80" : "text-on-surface-muted"
+                  !supervised ? "text-white/80" : "text-on-surface-muted"
                 }`}
               >
                 Sit back. We generate every page end-to-end without stopping.

@@ -902,28 +902,32 @@ All text-based Gemini calls that expect JSON should:
 
 | Route | Purpose |
 |-------|---------|
-| `/` | Landing page. Hero section, CTA to start creating, and a "My Comics" link/button to `/library`. |
-| `/create` | Multi-step wizard for comic creation. All steps render within this single page using client-side state to track the current step. |
+| `/` | Landing page. Prompt input, art style selector, page count input, and "Create Comic" CTA. "My Comics" link to `/library`. |
+| `/create` | Multi-step wizard for comic creation. All steps render within this single page using client-side state. Receives `prompt`, `artStyle`, `customStylePrompt`, and `pageCount` via query params. Calls `POST /api/comic` on mount. |
 | `/library` | Library of all previously generated comics. Grid of comic cards with thumbnails, titles, and status. |
 | `/comic/[id]` | Comic viewer. Shows the finished (or in-progress) comic. Also serves as the share link target. |
 
-### 7.2 Wizard Steps (all on `/create`)
+### 7.2 Landing Page (`/`)
 
-The wizard is a single client-side page component with an internal step state. The steps are:
+The home page is where the user starts. It contains:
+- App name and tagline.
+- A prominent **text area** for the comic idea/prompt.
+- A **"Surprise Me"** button that calls `GET /api/comic/random-idea` and fills the text area.
+- **Art style selector**: 6 cards (5 presets + Custom). When Custom is selected, show a text input for the style prompt.
+- **Page count**: number input or slider, range 1–15.
+- A **"Create Comic"** button that calls `POST /api/comic` with the entered values and navigates to `/create?id=<comicId>` on success.
+- A **"My Comics"** link/button that navigates to `/library`.
 
-**Step 1 — Idea & Preferences**
-- Text area for the comic idea/prompt.
-- "Surprise Me" button that calls `GET /api/comic/random-idea` and fills the text area.
-- Art style selector: 6 cards (5 presets + Custom). When Custom is selected, show a text input for the style prompt.
-- Page count: number input or slider, range 1–15.
-- "Next" button calls `POST /api/comic` and advances to Step 2.
+### 7.3 Wizard Steps (all on `/create`)
 
-**Step 2 — Follow-Up Questions**
-- Displays up to 5 questions returned from the create endpoint.
-- Each question has a text input. All are optional.
-- "Skip All" and "Next" buttons. Both call `POST /api/comic/[id]/refine`.
+The wizard is a single client-side page component with an internal step state. The comic ID is passed via `?id=` query param — the comic has already been created by the landing page before the user arrives here.
 
-**Step 3 — Script Review**
+**Step 1 — Follow-Up Questions**
+- On mount, fetches the comic via `GET /api/comic/[id]` to retrieve the follow-up questions.
+- Displays up to 5 questions. Each has a text input. All are optional.
+- "Skip All" and "Next" buttons. Both call `POST /api/comic/[id]/refine` and advance to Step 2.
+
+**Step 2 — Script Review**
 - Calls `POST /api/comic/[id]/script/generate` on mount. Shows a loading state while generating.
 - Displays the script in a readable format: title, synopsis, then each page with its panels.
 - Three action buttons:
@@ -931,11 +935,11 @@ The wizard is a single client-side page component with an internal step state. T
   - "Edit" — makes the script text editable inline.
   - "Regenerate" — opens a text input for feedback, then calls `POST /api/comic/[id]/script/regenerate`.
 
-**Step 4 — Mode Selection**
+**Step 3 — Mode Selection**
 - Two cards: "Supervised" and "Automated" with descriptions.
 - Selecting one calls `PUT /api/comic/[id]/approve` and advances to Step 5.
 
-**Step 5 — Generation**
+**Step 4 — Generation**
 
 *Supervised Mode:*
 - Shows the current page being generated with a loading state.
@@ -949,7 +953,7 @@ The wizard is a single client-side page component with an internal step state. T
 - Simultaneously polls `GET /api/comic/[id]` every 5 seconds to show incremental progress (pages generated so far).
 - On completion, redirects to `/comic/[id]`.
 
-### 7.3 Comic Viewer (`/comic/[id]`)
+### 7.4 Comic Viewer (`/comic/[id]`)
 
 - Fetches the comic via `GET /api/comic/[id]`.
 - If comic is not found, show a 404 state.
@@ -961,7 +965,7 @@ The wizard is a single client-side page component with an internal step state. T
   - "Share" — copies the current URL to clipboard (the URL is the share link).
   - "Export PDF" — triggers PDF download. Calls `GET /api/comic/[id]/export/pdf` or generates client-side.
 
-### 7.4 Library Page (`/library`)
+### 7.5 Library Page (`/library`)
 
 Displays all comics the current user has created, pulled from localStorage IDs and hydrated from the API.
 
@@ -986,7 +990,7 @@ Displays all comics the current user has created, pulled from localStorage IDs a
 
 **Sorting:** Most recently created first (based on `createdAt`).
 
-### 7.5 Client-Side State
+### 7.6 Client-Side State
 
 The frontend stores comic IDs in `localStorage` under the key `doodlpop_my_comics`:
 
@@ -1322,17 +1326,20 @@ This epic builds the minimum viable path from idea to finished comic. Automated 
 #### Frontend
 
 **Landing page (`/`)**
-- Hero section with app name and tagline.
-- Single CTA button: "Create a Comic" that navigates to `/create`.
-- Minimal styling. Does not need to be polished yet.
-
-**Wizard (`/create`) — 3 steps only**
-
-*Step 1 — Idea & Preferences:*
-- Text area for the comic idea/prompt.
+- App name and tagline.
+- Prominent text area for the comic idea/prompt.
+- "Surprise Me" button that calls `GET /api/comic/random-idea` and fills the text area.
 - Art style selector: 6 cards (5 presets + Custom with text input).
 - Page count input (1–15).
-- "Generate Script" button that calls `POST /api/comic` and advances to Step 2.
+- "Create Comic" button that calls `POST /api/comic` with the entered values and navigates to `/create?id=<comicId>` on success.
+- Minimal styling. Does not need to be polished yet.
+
+**Wizard (`/create`) — 2 steps only**
+
+*Step 1 — Follow-Up Questions:*
+- On mount, fetches comic via `GET /api/comic/[id]` to get follow-up questions.
+- Displays up to 5 questions. All optional.
+- "Skip All" and "Next" buttons. Both call `POST /api/comic/[id]/refine` and advance to Step 2.
 
 *Step 2 — Script Review:*
 - Calls `POST /api/comic/[id]/script/generate` on mount. Shows loading state.

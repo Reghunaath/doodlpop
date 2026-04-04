@@ -7,7 +7,7 @@
 - **Frontend:** React 19, Tailwind CSS 4. shadcn/ui is acceptable if needed.
 - **Text AI:** Google Gemini (`gemini-2.5-flash`) via `@google/genai` SDK. Used for script generation, follow-up questions, and random idea generation.
 - **Image AI:** Nano Banana Pro (`gemini-3-pro-image-preview`) via the same SDK. Used for comic page image generation.
-- **Storage:** Vercel KV for comic metadata (JSON), Vercel Blob for generated images. In-memory fallback for local dev (see `STORAGE_BACKEND` env var).
+- **Storage:** Upstash Redis (`@upstash/redis`) for comic metadata (JSON), Vercel Blob for generated images. In-memory fallback for local dev (see `STORAGE_BACKEND` env var). Upstash Redis is created via the Vercel dashboard — env vars `KV_REST_API_URL` and `KV_REST_API_TOKEN` are auto-populated when linked.
 - **PDF Export:** `jspdf` client-side.
 - **Package Manager:** pnpm.
 - **Deployment:** Vercel.

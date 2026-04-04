@@ -59,22 +59,27 @@ const memoryAdapter: StorageAdapter = {
   },
 };
 
-// ---- Vercel KV + Blob Implementation ----
+// ---- Upstash Redis + Vercel Blob Implementation ----
 
 async function createVercelAdapter(): Promise<StorageAdapter> {
-  const { kv } = await import("@vercel/kv");
+  const { Redis } = await import("@upstash/redis");
   const { put } = await import("@vercel/blob");
+
+  const redis = new Redis({
+    url: process.env.KV_REST_API_URL!,
+    token: process.env.KV_REST_API_TOKEN!,
+  });
 
   return {
     async getComic(id) {
-      const data = await kv.get<string>(`comic:${id}`);
+      const data = await redis.get<string>(`comic:${id}`);
       if (!data) return null;
       return typeof data === "string" ? JSON.parse(data) : (data as Comic);
     },
 
     async getComicsBatch(ids) {
       const results = await Promise.all(
-        ids.map((id) => kv.get<string>(`comic:${id}`))
+        ids.map((id) => redis.get<string>(`comic:${id}`))
       );
       return results.flatMap((data) => {
         if (!data) return [];
@@ -85,7 +90,7 @@ async function createVercelAdapter(): Promise<StorageAdapter> {
     },
 
     async saveComic(comic) {
-      await kv.set(`comic:${comic.id}`, JSON.stringify(comic));
+      await redis.set(`comic:${comic.id}`, JSON.stringify(comic));
     },
 
     async uploadImage(comicId, pageNumber, versionIndex, imageBuffer) {

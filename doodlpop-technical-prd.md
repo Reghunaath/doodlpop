@@ -53,7 +53,7 @@ There are no user accounts. Each comic is identified by a UUID. The creator's br
 | Frontend UI | React 19 + Tailwind CSS 4 | No component library required, but shadcn/ui is fine if preferred |
 | Text AI | Google Gemini (`gemini-2.5-flash`) | Script generation, follow-up questions, random idea generator |
 | Image AI | Nano Banana Pro (`gemini-3-pro-image-preview`) | Panel image generation via `@google/genai` SDK |
-| Metadata Storage | Vercel KV | Comic objects (JSON). Free tier: 256MB, 30k requests/day |
+| Metadata Storage | Upstash Redis (`@upstash/redis`) | Comic objects (JSON). Free tier: 256MB, 10k commands/day. Created via Vercel dashboard. |
 | Image Storage | Vercel Blob | Generated panel images. Free tier: 250MB |
 | PDF Export | `jspdf` (client-side) | Lightweight, no server-side dependency |
 | Deployment | Vercel | Serverless functions, edge network |
@@ -1021,15 +1021,20 @@ export interface StorageAdapter {
 }
 ```
 
-### 8.2 Vercel KV + Blob Implementation (Production)
+### 8.2 Upstash Redis + Vercel Blob Implementation (Production)
 
 ```typescript
-import { kv } from "@vercel/kv";
-import { put, list } from "@vercel/blob";
+import { Redis } from "@upstash/redis";
+import { put } from "@vercel/blob";
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
+});
 
 // Comic metadata
-await kv.set(`comic:${id}`, JSON.stringify(comic));
-const data = await kv.get(`comic:${id}`);
+await redis.set(`comic:${id}`, JSON.stringify(comic));
+const data = await redis.get<string>(`comic:${id}`);
 
 // Image upload
 const blob = await put(
@@ -1039,6 +1044,8 @@ const blob = await put(
 );
 // blob.url is the public URL
 ```
+
+Upstash Redis is created via the Vercel dashboard (Storage tab). The `KV_REST_API_URL` and `KV_REST_API_TOKEN` env vars are auto-populated when linked.
 
 ### 8.3 In-Memory Implementation (Local Dev Fallback)
 
@@ -1209,7 +1216,7 @@ export const maxDuration = 300; // 5 minutes (requires Vercel Pro plan)
 | Vercel function timeout (60s on Hobby) | Automated mode for long comics may fail | Save progress after each page. Frontend polls for partial state. Limit automated mode to ~8 pages. |
 | Gemini returns malformed JSON | Script generation fails | Retry once with a correction prompt. Validate all parsed output. |
 | Image generation safety filters | Some prompts may be blocked by Nano Banana Pro's content policy | Catch these errors gracefully. Show a message to the user suggesting they adjust their idea. |
-| KV storage limits (256MB free tier) | Could fill up if many comics are created | Each comic is ~50KB of metadata. 256MB supports ~5000 comics. Fine for a hackathon. |
+| Upstash Redis limits (256MB / 10k cmds/day free tier) | Could fill up if many comics are created | Each comic is ~50KB of metadata. 256MB supports ~5000 comics. 10k commands/day is ample for a hackathon demo. |
 | Blob storage limits (250MB free tier) | Images are larger — ~200KB–500KB each | A 15-page comic with 4 versions per page = ~30MB worst case. Supports ~8 full comics. Sufficient for a demo. |
 
 ---

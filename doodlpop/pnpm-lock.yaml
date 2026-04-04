@@ -11,12 +11,12 @@ importers:
       '@google/genai':
         specifier: ^1.48.0
         version: 1.48.0
+      '@upstash/redis':
+        specifier: ^1.37.0
+        version: 1.37.0
       '@vercel/blob':
         specifier: ^2.3.3
         version: 2.3.3
-      '@vercel/kv':
-        specifier: ^3.0.0
-        version: 3.0.0
       jspdf:
         specifier: ^4.2.1
         version: 4.2.1
@@ -759,11 +759,6 @@ packages:
   '@vercel/blob@2.3.3':
     resolution: {integrity: sha512-MtD7VLo6hU07eHR7bmk5SIMD290q574UaNYTe46qeyRT+hWrCy26CoAqfd7PnIefVXvRehRZBzukxuTO9iGTVg==}
     engines: {node: '>=20.0.0'}
-
-  '@vercel/kv@3.0.0':
-    resolution: {integrity: sha512-pKT8fRnfyYk2MgvyB6fn6ipJPCdfZwiKDdw7vB+HL50rjboEBHDVBEcnwfkEpVSp2AjNtoaOUH7zG+bVC/rvSg==}
-    engines: {node: '>=14.6'}
-    deprecated: 'Vercel KV is deprecated. If you had an existing KV store, it should have moved to Upstash Redis which you will see under Vercel Integrations. For new projects, install a Redis integration from Vercel Marketplace: https://vercel.com/marketplace?category=storage&search=redis'
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -2847,10 +2842,6 @@ snapshots:
       is-node-process: 1.2.0
       throttleit: 2.1.0
       undici: 6.24.1
-
-  '@vercel/kv@3.0.0':
-    dependencies:
-      '@upstash/redis': 1.37.0
 
   acorn-jsx@5.3.2(acorn@8.16.0):
     dependencies:

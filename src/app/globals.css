@@ -18,6 +18,8 @@
   --color-tertiary-container: #54c7fa;
   --color-on-tertiary-container: #003e53;
   --color-on-primary: #ffefed;
+  --color-outline-variant: #afacac;
+  --color-surface-low: #f3f0ef;
   --color-ink: #000000;
 }
 
@@ -40,6 +42,28 @@
   bottom: -22px;
   left: 61px;
   border-width: 25px 25px 0 0;
+  border-style: solid;
+  border-color: #fff transparent transparent transparent;
+  z-index: 10;
+}
+
+/* Smaller tail variant for sidebar speech bubble */
+.speech-bubble-tail-sm::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 40px;
+  border-width: 20px 20px 0 0;
+  border-style: solid;
+  border-color: #000 transparent transparent transparent;
+}
+
+.speech-bubble-tail-sm::before {
+  content: '';
+  position: absolute;
+  bottom: -13px;
+  left: 44px;
+  border-width: 15px 15px 0 0;
   border-style: solid;
   border-color: #fff transparent transparent transparent;
   z-index: 10;

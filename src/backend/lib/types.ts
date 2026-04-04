@@ -44,6 +44,9 @@ export interface Comic {
   generationMode?: GenerationMode;
   pages: Page[];
   currentPageIndex: number;               // Tracks progress in supervised mode
+
+  // Character reference sheet (generated before pages for consistency)
+  characterSheetUrl?: string;
 }
 
 export interface FollowUpQuestion {

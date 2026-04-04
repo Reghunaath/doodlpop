@@ -15,6 +15,7 @@ export interface StorageAdapter {
     versionIndex: number,
     imageBuffer: Buffer
   ): Promise<string>; // returns public URL
+  uploadCharacterSheet(comicId: string, imageBuffer: Buffer): Promise<string>; // returns public URL
   getImageBuffer(url: string): Promise<Buffer>;
 }
 
@@ -50,16 +51,30 @@ const memoryAdapter: StorageAdapter = {
   async uploadImage(comicId, pageNumber, versionIndex, imageBuffer) {
     const key = `comics/${comicId}/page-${pageNumber}-v${versionIndex}.png`;
     imagesMap.set(key, imageBuffer);
-    // Return an internal URL that the image serve route can handle
     const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
     return `${base}/api/comic/${comicId}/image/${pageNumber}/${versionIndex}`;
   },
 
+  async uploadCharacterSheet(comicId, imageBuffer) {
+    const key = `comics/${comicId}/character-sheet.png`;
+    imagesMap.set(key, imageBuffer);
+    const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    return `${base}/api/comic/${comicId}/character-sheet`;
+  },
+
   async getImageBuffer(url) {
-    // Extract key from URL: /api/comic/{id}/image/{page}/{version}
-    const match = url.match(/\/api\/comic\/([^/]+)\/image\/(\d+)\/(\d+)/);
-    if (!match) throw new Error(`Cannot resolve image URL: ${url}`);
-    const [, comicId, pageNumber, versionIndex] = match;
+    // Character sheet URL: /api/comic/{id}/character-sheet
+    const sheetMatch = url.match(/\/api\/comic\/([^/]+)\/character-sheet/);
+    if (sheetMatch) {
+      const key = `comics/${sheetMatch[1]}/character-sheet.png`;
+      const buf = imagesMap.get(key);
+      if (!buf) throw new Error(`Character sheet not found: ${key}`);
+      return buf;
+    }
+    // Page image URL: /api/comic/{id}/image/{page}/{version}
+    const pageMatch = url.match(/\/api\/comic\/([^/]+)\/image\/(\d+)\/(\d+)/);
+    if (!pageMatch) throw new Error(`Cannot resolve image URL: ${url}`);
+    const [, comicId, pageNumber, versionIndex] = pageMatch;
     const key = `comics/${comicId}/page-${pageNumber}-v${versionIndex}.png`;
     const buf = imagesMap.get(key);
     if (!buf) throw new Error(`Image not found: ${key}`);
@@ -104,6 +119,15 @@ async function createVercelAdapter(): Promise<StorageAdapter> {
     async uploadImage(comicId, pageNumber, versionIndex, imageBuffer) {
       const blob = await put(
         `comics/${comicId}/page-${pageNumber}-v${versionIndex}.png`,
+        imageBuffer,
+        { access: "public", contentType: "image/png" }
+      );
+      return blob.url;
+    },
+
+    async uploadCharacterSheet(comicId, imageBuffer) {
+      const blob = await put(
+        `comics/${comicId}/character-sheet.png`,
         imageBuffer,
         { access: "public", contentType: "image/png" }
       );

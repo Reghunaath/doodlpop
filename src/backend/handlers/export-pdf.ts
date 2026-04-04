@@ -3,6 +3,8 @@
 import { NextResponse } from "next/server";
 import { PDFDocument } from "pdf-lib";
 import { getStorage } from "../lib/storage";
+import { writeFile, mkdir } from "fs/promises";
+import { join } from "path";
 
 export async function handleExportPdf(id: string): Promise<NextResponse> {
   const storage = await getStorage();
@@ -44,8 +46,18 @@ export async function handleExportPdf(id: string): Promise<NextResponse> {
   const pdfBytes = await pdfDoc.save();
   const title = comic.script?.title ?? "comic";
   const filename = title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  const pdfBuffer = Buffer.from(pdfBytes);
 
-  return new NextResponse(Buffer.from(pdfBytes), {
+  // Save to local disk in dev mode only
+  if (process.env.STORAGE_BACKEND !== "vercel") {
+    const outputDir = join(process.cwd(), "generated-pdfs");
+    await mkdir(outputDir, { recursive: true });
+    const outputPath = join(outputDir, `${filename}-${id.slice(0, 8)}.pdf`);
+    await writeFile(outputPath, pdfBuffer);
+    console.log(`[PDF] Saved to ${outputPath}`);
+  }
+
+  return new NextResponse(pdfBuffer, {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="${filename}.pdf"`,

@@ -1,26 +1,148 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-primary: #ba0015;
+  --color-primary-dim: #a40011;
+  --color-primary-light: #ff766c;
+  --color-secondary-bg: #fddc00;
+  --color-tertiary: #006383;
+  --color-tertiary-dim: #005673;
+  --color-on-tertiary: #e6f5ff;
+  --color-surface: #f9f6f5;
+  --color-surface-card: #eae7e7;
+  --color-surface-high: #e5e2e1;
+  --color-surface-white: #ffffff;
+  --color-on-surface: #2f2e2e;
+  --color-on-surface-muted: #5c5b5b;
+  --color-on-secondary-container: #5b4e00;
+  --color-tertiary-container: #54c7fa;
+  --color-on-tertiary-container: #003e53;
+  --color-on-primary: #ffefed;
+  --color-outline-variant: #afacac;
+  --color-surface-low: #f3f0ef;
+  --color-ink: #000000;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ── Comic-book utilities ─────────────────────────────── */
+
+/* Speech bubble with tail pointing bottom-left */
+.speech-bubble-tail::after {
+  content: '';
+  position: absolute;
+  bottom: -32px;
+  left: 56px;
+  border-width: 32px 32px 0 0;
+  border-style: solid;
+  border-color: #000 transparent transparent transparent;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.speech-bubble-tail::before {
+  content: '';
+  position: absolute;
+  bottom: -22px;
+  left: 61px;
+  border-width: 25px 25px 0 0;
+  border-style: solid;
+  border-color: #fff transparent transparent transparent;
+  z-index: 10;
 }
+
+/* Smaller tail variant for sidebar speech bubble */
+.speech-bubble-tail-sm::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 40px;
+  border-width: 20px 20px 0 0;
+  border-style: solid;
+  border-color: #000 transparent transparent transparent;
+}
+
+.speech-bubble-tail-sm::before {
+  content: '';
+  position: absolute;
+  bottom: -13px;
+  left: 44px;
+  border-width: 15px 15px 0 0;
+  border-style: solid;
+  border-color: #fff transparent transparent transparent;
+  z-index: 10;
+}
+
+.ben-day-dots {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.055) 1.5px, transparent 0);
+  background-size: 10px 10px;
+}
+
+.ink-border {
+  border: 4px solid #000;
+}
+
+.ink-shadow {
+  box-shadow: 8px 8px 0px 0px #000;
+}
+
+.ink-shadow-sm {
+  box-shadow: 4px 4px 0px 0px #000;
+}
+
+.ink-shadow-lg {
+  box-shadow: 12px 12px 0px 0px #000;
+}
+
+.comic-burst {
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+.font-headline {
+  font-family: var(--font-epilogue), sans-serif;
+}
+
+/* ── Comic range slider ───────────────────────────────── */
+
+.comic-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  background: #000;
+  outline: none;
+  cursor: pointer;
+}
+
+.comic-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 36px;
+  height: 36px;
+  background: #ba0015;
+  border: 4px solid #000;
+  box-shadow: 3px 3px 0px 0px #000;
+  cursor: grab;
+  transform: rotate(45deg);
+  transition: transform 75ms;
+}
+
+.comic-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: rotate(45deg) scale(1.15);
+}
+
+.comic-slider::-moz-range-thumb {
+  width: 36px;
+  height: 36px;
+  background: #ba0015;
+  border: 4px solid #000;
+  box-shadow: 3px 3px 0px 0px #000;
+  cursor: grab;
+  transform: rotate(45deg);
+  border-radius: 0;
+}
+
+/* ── Base ─────────────────────────────────────────────── */
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), "Be Vietnam Pro", sans-serif;
+  background-color: #f9f6f5;
+  color: #2f2e2e;
 }

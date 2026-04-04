@@ -136,7 +136,11 @@ NEXT_PUBLIC_BASE_URL=         # e.g. http://localhost:3000 or https://doodlpop.v
 
 `.env.example` must list all variables with placeholder values. `.env.local` is gitignored.
 
-## 12. File Management
+## 12. Git Workflow
+
+⚠️ **IMPORTANT:** Always ask for confirmation before making any `git commit` or `git push`. Do not commit or push automatically after completing changes. Show what will be committed and wait for explicit approval.
+
+## 13. File Management
 
 - Keep `README.md` updated with setup instructions, how to run locally, and how to deploy.
 - `doodlpop-technical-prd.md` in the project root is the technical spec. Do not modify it without explicit approval.

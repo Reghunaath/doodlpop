@@ -87,14 +87,20 @@ doodlpop/
 ├── src/
 │   ├── app/                          # Next.js routing (thin layer only)
 │   │   ├── layout.tsx                # Root layout
-│   │   ├── page.tsx                  # Landing page
+│   │   ├── page.tsx                  # Landing page (prompt, art style, page count)
 │   │   ├── create/
-│   │   │   └── page.tsx              # Wizard flow (single page, multi-step)
+│   │   │   └── page.tsx              # Q&A step (follow-up questions)
+│   │   ├── script/
+│   │   │   └── [id]/
+│   │   │       └── page.tsx          # Script review + mode selection
+│   │   ├── review/
+│   │   │   └── [id]/
+│   │   │       └── page.tsx          # Supervised mode: page-by-page review
 │   │   ├── library/
 │   │   │   └── page.tsx              # Library of previously generated comics
 │   │   ├── comic/
 │   │   │   └── [id]/
-│   │   │       └── page.tsx          # Comic viewer (creator + shared reader)
+│   │   │       └── page.tsx          # Final comic viewer (creator + shared reader)
 │   │   └── api/
 │   │       └── comic/
 │   │           ├── route.ts                    # POST: create comic (calls backend handler)
@@ -150,9 +156,11 @@ doodlpop/
 │   │       └── generate-all.ts
 │   └── frontend/                     # All React components (owned by frontend developer)
 │       ├── landing/                  # Landing page components
-│       ├── wizard/                   # Creation wizard step components
+│       ├── qa/                       # Q&A step components
+│       ├── script-review/            # Script review + mode selection components
+│       ├── page-review/              # Supervised mode page review components
 │       ├── library/                  # Library page components (comic cards, grid)
-│       ├── comic-viewer/             # Comic reader components
+│       ├── comic-viewer/             # Final comic reader components
 │       └── ui/                       # Shared UI primitives
 ├── public/
 ├── .env.local
@@ -903,9 +911,11 @@ All text-based Gemini calls that expect JSON should:
 | Route | Purpose |
 |-------|---------|
 | `/` | Landing page. Prompt input, art style selector, page count input, and "Create Comic" CTA. "My Comics" link to `/library`. |
-| `/create` | Multi-step wizard for comic creation. All steps render within this single page using client-side state. Receives `prompt`, `artStyle`, `customStylePrompt`, and `pageCount` via query params. Calls `POST /api/comic` on mount. |
+| `/create?id=` | Q&A step. Displays follow-up questions generated when the comic was created. User answers (all optional) and submits to generate the script. |
+| `/script/[id]` | Script review page. User reads the generated script, can edit it inline or regenerate with feedback. Selects mode (supervised/automated) and approves. In automated mode, shows generation progress inline; redirects to `/comic/[id]` when done. |
+| `/review/[id]` | Supervised mode page-by-page review. User triggers generation for each page, reviews the result, and can regenerate with an optional prompt. When all pages are approved, redirects to `/comic/[id]`. |
 | `/library` | Library of all previously generated comics. Grid of comic cards with thumbnails, titles, and status. |
-| `/comic/[id]` | Comic viewer. Shows the finished (or in-progress) comic. Also serves as the share link target. |
+| `/comic/[id]` | Final comic viewer. Shows the complete comic. Also serves as the share link target. |
 
 ### 7.2 Landing Page (`/`)
 
@@ -918,42 +928,39 @@ The home page is where the user starts. It contains:
 - A **"Create Comic"** button that calls `POST /api/comic` with the entered values and navigates to `/create?id=<comicId>` on success.
 - A **"My Comics"** link/button that navigates to `/library`.
 
-### 7.3 Wizard Steps (all on `/create`)
+### 7.3 Q&A Page (`/create?id=`)
 
-The wizard is a single client-side page component with an internal step state. The comic ID is passed via `?id=` query param — the comic has already been created by the landing page before the user arrives here.
+The comic ID is passed via `?id=` query param. The comic has already been created (and follow-up questions generated) by the landing page before the user arrives here.
 
-**Step 1 — Follow-Up Questions**
 - On mount, fetches the comic via `GET /api/comic/[id]` to retrieve the follow-up questions.
 - Displays up to 5 questions. Each has a text input. All are optional.
-- "Skip All" and "Next" buttons. Both call `POST /api/comic/[id]/refine` and advance to Step 2.
+- "Skip All" and "Submit" buttons. Both call `POST /api/comic/[id]/refine` with the answers, then redirect to `/script/[id]`.
 
-**Step 2 — Script Review**
-- Calls `POST /api/comic/[id]/script/generate` on mount. Shows a loading state while generating.
+### 7.4 Script Review Page (`/script/[id]`)
+
+- On mount, calls `POST /api/comic/[id]/script/generate`. Shows a loading state while generating.
 - Displays the script in a readable format: title, synopsis, then each page with its panels.
-- Three action buttons:
-  - "Approve" — opens mode selection (Step 4).
-  - "Edit" — makes the script text editable inline.
-  - "Regenerate" — opens a text input for feedback, then calls `POST /api/comic/[id]/script/regenerate`.
+- **Action buttons:**
+  - **"Regenerate"** — reveals a text input for optional feedback, then calls `POST /api/comic/[id]/script/regenerate` and refreshes the displayed script.
+  - **"Edit"** — makes the script text editable inline (direct text editing of the script JSON fields).
+- **Mode selection:** Two cards — "Supervised" and "Automated" with descriptions. User must select one before approving.
+- **"Approve" button** — calls `PUT /api/comic/[id]/approve` with the selected mode.
+  - If **automated**: shows inline generation progress ("Generating page 3 of 8..."), calls `POST /api/comic/[id]/generate-all`, polls `GET /api/comic/[id]` every 5 seconds for progress, then redirects to `/comic/[id]` on completion.
+  - If **supervised**: redirects to `/review/[id]`.
 
-**Step 3 — Mode Selection**
-- Two cards: "Supervised" and "Automated" with descriptions.
-- Selecting one calls `PUT /api/comic/[id]/approve` and advances to Step 5.
+### 7.5 Supervised Page Review (`/review/[id]`)
 
-**Step 4 — Generation**
+Handles page-by-page generation and review for supervised mode.
 
-*Supervised Mode:*
-- Shows the current page being generated with a loading state.
-- After the image loads, displays the image with three buttons: "Approve", "Regenerate" (with counter showing remaining regenerations), and version thumbnails if multiple versions exist.
-- Approving calls `PUT /api/comic/[id]/page/select` and triggers `POST /api/comic/[id]/page/generate` for the next page.
-- After the last page is approved, redirects to `/comic/[id]`.
+- On mount, fetches the comic via `GET /api/comic/[id]` to determine which pages have been generated so far.
+- Shows the current page number being worked on (e.g. "Page 2 of 5").
+- **"Generate Page" button** — calls `POST /api/comic/[id]/page/generate` for the current page number. Shows a loading state while generating.
+- After the image loads, displays it with:
+  - **"Approve"** — calls `PUT /api/comic/[id]/page/select` with `selectedVersionIndex`, then advances to the next page. After the last page is approved, redirects to `/comic/[id]`.
+  - **"Regenerate"** — reveals a text input for an optional prompt, calls `POST /api/comic/[id]/page/regenerate`. Shows a regeneration counter (e.g. "1 of 3 regenerations used").
+  - **Version thumbnails** — if multiple versions exist, clicking a thumbnail previews that version before approving.
 
-*Automated Mode:*
-- Shows a progress indicator ("Generating page 3 of 8...").
-- Calls `POST /api/comic/[id]/generate-all`.
-- Simultaneously polls `GET /api/comic/[id]` every 5 seconds to show incremental progress (pages generated so far).
-- On completion, redirects to `/comic/[id]`.
-
-### 7.4 Comic Viewer (`/comic/[id]`)
+### 7.6 Comic Viewer (`/comic/[id]`)
 
 - Fetches the comic via `GET /api/comic/[id]`.
 - If comic is not found, show a 404 state.
@@ -965,7 +972,7 @@ The wizard is a single client-side page component with an internal step state. T
   - "Share" — copies the current URL to clipboard (the URL is the share link).
   - "Export PDF" — triggers PDF download. Calls `GET /api/comic/[id]/export/pdf` or generates client-side.
 
-### 7.5 Library Page (`/library`)
+### 7.7 Library Page (`/library`)
 
 Displays all comics the current user has created, pulled from localStorage IDs and hydrated from the API.
 
@@ -983,14 +990,14 @@ Displays all comics the current user has created, pulled from localStorage IDs a
 - Created date (relative, e.g. "2 hours ago").
 
 **Card actions:**
-- Click the card to navigate to `/comic/[id]` (if complete) or `/create` with the comic ID loaded to resume (if in progress).
+- Click the card to navigate to `/comic/[id]` (if complete) or the appropriate in-progress page (`/create?id=`, `/script/[id]`, or `/review/[id]` depending on comic status) to resume.
 - Delete button: removes the comic ID from localStorage. Does not delete server-side data (no auth to verify ownership). Shows a confirmation dialog first.
 
 **Empty state:** If no comics exist in localStorage, show a message with a CTA to create the first comic.
 
 **Sorting:** Most recently created first (based on `createdAt`).
 
-### 7.6 Client-Side State
+### 7.8 Client-Side State
 
 The frontend stores comic IDs in `localStorage` under the key `doodlpop_my_comics`:
 

@@ -24,7 +24,7 @@ Next.js App Router. Single repo. `src/` is split into three areas: `app/` (Next.
   - `src/backend/lib/ai/` — Gemini client, prompts, script generator, image generator.
   - `src/backend/handlers/` — Actual request handler logic, one file per route group.
 - **`src/frontend/`** — All React components. Owned by the frontend developer.
-  - Organized by feature: `landing/`, `wizard/`, `library/`, `comic-viewer/`, `ui/`.
+  - Organized by feature: `landing/`, `qa/`, `script-review/`, `page-review/`, `comic-viewer/`, `library/`, `ui/`.
 - The `@google/genai` SDK is used server-side only (`src/backend/`). Never import it in `src/frontend/` or client components.
 
 ## 3. Technical PRD Is the Source of Truth
@@ -92,10 +92,10 @@ Development is split into three epics. Each epic produces a working, demoable pr
 ⚠️ **IMPORTANT:** Do not build features from a future epic. If a component references something that doesn't exist yet (like the share button in Epic 1), omit it entirely rather than adding a placeholder.
 
 **Epic 1 — Core Generation Loop**
-Home page (`/`) collects prompt + art style + page count → calls `POST /api/comic` → navigates to `/create?id=` → follow-up questions → script generation → automated generation → comic viewer. No script editing, no supervised mode, no library, no sharing, no export.
+Home page (`/`) collects prompt + art style + page count → calls `POST /api/comic` → navigates to `/create?id=` (Q&A) → `/script/[id]` (script review + mode selection) → automated generation with inline loading → `/comic/[id]` (final viewer). No script editing, no supervised mode, no library, no sharing, no export.
 
 **Epic 2 — Creative Control**
-Random idea generator, follow-up questions, script editing and regeneration, supervised mode with page regeneration and version selection. The full creation experience.
+Random idea generator, script editing and regeneration, supervised mode (`/review/[id]`) with page-by-page review and regeneration with optional prompt. Version selection. The full creation experience.
 
 **Epic 3 — Library, Sharing, and Export**
 Library page, share via public link, PDF export, production storage (Vercel KV + Blob).

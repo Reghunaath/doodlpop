@@ -19,9 +19,17 @@ export interface StorageAdapter {
 }
 
 // ---- In-Memory Implementation ----
+// Use global to share state across Next.js route module instances in dev mode.
 
-const comicsMap = new Map<string, Comic>();
-const imagesMap = new Map<string, Buffer>();
+declare global {
+  // eslint-disable-next-line no-var
+  var _doodlpopComics: Map<string, Comic> | undefined;
+  // eslint-disable-next-line no-var
+  var _doodlpopImages: Map<string, Buffer> | undefined;
+}
+
+const comicsMap = (global._doodlpopComics ??= new Map<string, Comic>());
+const imagesMap = (global._doodlpopImages ??= new Map<string, Buffer>());
 
 const memoryAdapter: StorageAdapter = {
   async getComic(id) {

@@ -92,7 +92,7 @@ Development is split into three epics. Each epic produces a working, demoable pr
 ⚠️ **IMPORTANT:** Do not build features from a future epic. If a component references something that doesn't exist yet (like the share button in Epic 1), omit it entirely rather than adding a placeholder.
 
 **Epic 1 — Core Generation Loop**
-Idea input → script generation → automated generation → comic viewer. Straight-line happy path only. No follow-up questions, no script editing, no supervised mode, no library, no sharing, no export.
+Home page (`/`) collects prompt + art style + page count → calls `POST /api/comic` → navigates to `/create?id=` → follow-up questions → script generation → automated generation → comic viewer. No script editing, no supervised mode, no library, no sharing, no export.
 
 **Epic 2 — Creative Control**
 Random idea generator, follow-up questions, script editing and regeneration, supervised mode with page regeneration and version selection. The full creation experience.

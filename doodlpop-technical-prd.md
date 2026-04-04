@@ -53,7 +53,7 @@ There are no user accounts. Each comic is identified by a UUID. The creator's br
 | Frontend UI | React 19 + Tailwind CSS 4 | No component library required, but shadcn/ui is fine if preferred |
 | Text AI | Google Gemini (`gemini-2.5-flash`) | Script generation, follow-up questions, random idea generator |
 | Image AI | Nano Banana Pro (`gemini-3-pro-image-preview`) | Panel image generation via `@google/genai` SDK |
-| Metadata Storage | Vercel KV | Comic objects (JSON). Free tier: 256MB, 30k requests/day |
+| Metadata Storage | Upstash Redis (`@upstash/redis`) | Comic objects (JSON). Free tier: 256MB, 10k commands/day. Created via Vercel dashboard. |
 | Image Storage | Vercel Blob | Generated panel images. Free tier: 250MB |
 | PDF Export | `jspdf` (client-side) | Lightweight, no server-side dependency |
 | Deployment | Vercel | Serverless functions, edge network |
@@ -85,7 +85,7 @@ NEXT_PUBLIC_BASE_URL=     # e.g. https://doodlpop.vercel.app (used for share lin
 ```
 doodlpop/
 ├── src/
-│   ├── app/
+│   ├── app/                          # Next.js routing (thin layer only)
 │   │   ├── layout.tsx                # Root layout
 │   │   ├── page.tsx                  # Landing page
 │   │   ├── create/
@@ -97,7 +97,7 @@ doodlpop/
 │   │   │       └── page.tsx          # Comic viewer (creator + shared reader)
 │   │   └── api/
 │   │       └── comic/
-│   │           ├── route.ts                    # POST: create comic
+│   │           ├── route.ts                    # POST: create comic (calls backend handler)
 │   │           ├── batch/
 │   │           │   └── route.ts                # POST: fetch multiple comics
 │   │           ├── random-idea/
@@ -125,16 +125,30 @@ doodlpop/
 │   │               └── export/
 │   │                   └── pdf/
 │   │                       └── route.ts        # GET: export PDF
-│   ├── lib/
-│   │   ├── types.ts                  # Shared TypeScript types
-│   │   ├── storage.ts                # Storage abstraction (KV + Blob)
-│   │   ├── ai/
-│   │   │   ├── gemini-client.ts      # Gemini client singleton
-│   │   │   ├── prompts.ts            # All prompt templates
-│   │   │   ├── script-generator.ts   # Script generation pipeline
-│   │   │   └── image-generator.ts    # Image generation pipeline
-│   │   └── constants.ts              # Art styles, limits, defaults
-│   └── components/
+│   ├── backend/                      # All backend logic (owned by backend developer)
+│   │   ├── lib/
+│   │   │   ├── types.ts              # Shared TypeScript types (contract for both devs)
+│   │   │   ├── constants.ts          # Art styles, limits, defaults
+│   │   │   ├── storage.ts            # Storage abstraction (KV + Blob)
+│   │   │   └── ai/
+│   │   │       ├── gemini-client.ts  # Gemini client singleton
+│   │   │       ├── prompts.ts        # All prompt templates
+│   │   │       ├── script-generator.ts  # Script generation pipeline
+│   │   │       └── image-generator.ts   # Image generation pipeline
+│   │   └── handlers/                 # Request handler logic (one file per route group)
+│   │       ├── create-comic.ts
+│   │       ├── get-comic.ts
+│   │       ├── batch-comics.ts
+│   │       ├── random-idea.ts
+│   │       ├── refine-comic.ts
+│   │       ├── generate-script.ts
+│   │       ├── regenerate-script.ts
+│   │       ├── approve-comic.ts
+│   │       ├── generate-page.ts
+│   │       ├── regenerate-page.ts
+│   │       ├── select-page.ts
+│   │       └── generate-all.ts
+│   └── frontend/                     # All React components (owned by frontend developer)
 │       ├── landing/                  # Landing page components
 │       ├── wizard/                   # Creation wizard step components
 │       ├── library/                  # Library page components (comic cards, grid)
@@ -148,11 +162,13 @@ doodlpop/
 └── package.json
 ```
 
+> **Structure rule:** `src/app/api/` route files are thin Next.js handlers only — no business logic. All logic lives in `src/backend/handlers/`. The frontend developer owns `src/frontend/` and `src/app/` page files. The backend developer owns `src/backend/` and `src/app/api/`.
+
 ---
 
 ## 4. Data Models
 
-All types live in `src/lib/types.ts`. Both developers import from here.
+All types live in `src/backend/lib/types.ts`. Both developers import from here.
 
 ```typescript
 // ============================================================
@@ -693,12 +709,12 @@ Returns a downloadable PDF of the comic.
 
 ## 6. AI Pipeline (Backend)
 
-All AI logic lives in `src/lib/ai/`. The pipeline has four stages, each with its own prompt template.
+All AI logic lives in `src/backend/lib/ai/`. The pipeline has four stages, each with its own prompt template.
 
 ### 6.1 Gemini Client Setup
 
 ```typescript
-// src/lib/ai/gemini-client.ts
+// src/backend/lib/ai/gemini-client.ts
 import { GoogleGenAI } from "@google/genai";
 
 export const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -840,7 +856,7 @@ The `artStyleDescription` mapping:
 #### Image Generation Code Pattern
 
 ```typescript
-// src/lib/ai/image-generator.ts
+// src/backend/lib/ai/image-generator.ts
 import { ai } from "./gemini-client";
 
 export async function generatePageImage(
@@ -991,10 +1007,10 @@ This is best-effort — clearing browser data loses access (acceptable for a hac
 
 ### 8.1 Abstraction
 
-Create a storage abstraction in `src/lib/storage.ts` so the backend developer can swap implementations.
+Create a storage abstraction in `src/backend/lib/storage.ts` so the backend developer can swap implementations.
 
 ```typescript
-// src/lib/storage.ts
+// src/backend/lib/storage.ts
 
 export interface StorageAdapter {
   getComic(id: string): Promise<Comic | null>;
@@ -1005,15 +1021,20 @@ export interface StorageAdapter {
 }
 ```
 
-### 8.2 Vercel KV + Blob Implementation (Production)
+### 8.2 Upstash Redis + Vercel Blob Implementation (Production)
 
 ```typescript
-import { kv } from "@vercel/kv";
-import { put, list } from "@vercel/blob";
+import { Redis } from "@upstash/redis";
+import { put } from "@vercel/blob";
+
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL!,
+  token: process.env.KV_REST_API_TOKEN!,
+});
 
 // Comic metadata
-await kv.set(`comic:${id}`, JSON.stringify(comic));
-const data = await kv.get(`comic:${id}`);
+await redis.set(`comic:${id}`, JSON.stringify(comic));
+const data = await redis.get<string>(`comic:${id}`);
 
 // Image upload
 const blob = await put(
@@ -1023,6 +1044,8 @@ const blob = await put(
 );
 // blob.url is the public URL
 ```
+
+Upstash Redis is created via the Vercel dashboard (Storage tab). The `KV_REST_API_URL` and `KV_REST_API_TOKEN` env vars are auto-populated when linked.
 
 ### 8.3 In-Memory Implementation (Local Dev Fallback)
 
@@ -1071,7 +1094,7 @@ If server-side export is preferred, implement it in the API route using `pdf-lib
 ## 10. Constants
 
 ```typescript
-// src/lib/constants.ts
+// src/backend/lib/constants.ts
 
 export const MAX_PAGES = 15;
 export const MIN_PAGES = 1;
@@ -1158,6 +1181,7 @@ export const maxDuration = 300; // 5 minutes (requires Vercel Pro plan)
 - Creation wizard (`/create`) with all 5 steps
 - Library page (`/library`) with comic grid, thumbnails, and status
 - Comic viewer (`/comic/[id]`)
+- All components in `src/frontend/`
 - Client-side localStorage management
 - Client-side PDF export
 - All UI components and styling
@@ -1166,18 +1190,19 @@ export const maxDuration = 300; // 5 minutes (requires Vercel Pro plan)
 
 ### Backend Developer Scope
 
-- All API routes under `/api/comic/`
-- Storage layer (`src/lib/storage.ts`)
-- AI pipeline (`src/lib/ai/`)
+- All API route files under `src/app/api/` (thin handlers only)
+- All handler logic in `src/backend/handlers/`
+- Storage layer (`src/backend/lib/storage.ts`)
+- AI pipeline (`src/backend/lib/ai/`)
 - All prompt engineering and Gemini/Nano Banana Pro integration
-- Shared types (`src/lib/types.ts`)
-- Constants (`src/lib/constants.ts`)
+- Shared types (`src/backend/lib/types.ts`)
+- Constants (`src/backend/lib/constants.ts`)
 - Environment variable configuration
 - Vercel KV and Blob setup
 
 ### Shared / Coordination
 
-- The `types.ts` file is the contract. Both developers depend on it. The backend developer owns it, but changes should be communicated.
+- The `src/backend/lib/types.ts` file is the contract. Both developers depend on it. The backend developer owns it, but changes should be communicated.
 - The API contract (Section 5) should not change without both developers agreeing.
 - The backend developer should build and test endpoints independently using a tool like `curl` or Postman before the frontend integrates.
 
@@ -1191,7 +1216,7 @@ export const maxDuration = 300; // 5 minutes (requires Vercel Pro plan)
 | Vercel function timeout (60s on Hobby) | Automated mode for long comics may fail | Save progress after each page. Frontend polls for partial state. Limit automated mode to ~8 pages. |
 | Gemini returns malformed JSON | Script generation fails | Retry once with a correction prompt. Validate all parsed output. |
 | Image generation safety filters | Some prompts may be blocked by Nano Banana Pro's content policy | Catch these errors gracefully. Show a message to the user suggesting they adjust their idea. |
-| KV storage limits (256MB free tier) | Could fill up if many comics are created | Each comic is ~50KB of metadata. 256MB supports ~5000 comics. Fine for a hackathon. |
+| Upstash Redis limits (256MB / 10k cmds/day free tier) | Could fill up if many comics are created | Each comic is ~50KB of metadata. 256MB supports ~5000 comics. 10k commands/day is ample for a hackathon demo. |
 | Blob storage limits (250MB free tier) | Images are larger — ~200KB–500KB each | A 15-page comic with 4 versions per page = ~30MB worst case. Supports ~8 full comics. Sufficient for a demo. |
 
 ---
@@ -1262,12 +1287,13 @@ User              Frontend              Backend API           Gemini / Nano Bana
 
 1. Clone the repo. Run `pnpm install`.
 2. Create `.env.local` with `GEMINI_API_KEY` and `STORAGE_BACKEND=memory`.
-3. Start with `src/lib/types.ts` and `src/lib/constants.ts`.
-4. Build `src/lib/ai/gemini-client.ts`, `prompts.ts`, `script-generator.ts`, `image-generator.ts`.
-5. Build `src/lib/storage.ts` (start with in-memory).
-6. Implement API routes one at a time, starting with `POST /api/comic` and `GET /api/comic/[id]`.
-7. Test each route with curl.
-8. When ready for deployment, add Vercel KV/Blob and implement the Vercel storage adapter.
+3. Start with `src/backend/lib/types.ts` and `src/backend/lib/constants.ts`.
+4. Build `src/backend/lib/ai/gemini-client.ts`, `prompts.ts`, `script-generator.ts`, `image-generator.ts`.
+5. Build `src/backend/lib/storage.ts` (start with in-memory).
+6. Implement handlers in `src/backend/handlers/`, one at a time.
+7. Wire each handler to its thin route file in `src/app/api/`, starting with `POST /api/comic` and `GET /api/comic/[id]`.
+8. Test each route with curl.
+9. When ready for deployment, add Vercel KV/Blob and implement the Vercel storage adapter.
 
 ### Frontend Developer
 

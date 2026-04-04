@@ -64,7 +64,29 @@ export async function handleGeneratePage(
     comic.customStylePrompt
   );
 
-  const imageBuffer = await generatePageImage(prompt);
+  // Build reference buffers: character sheet + previous page (if any)
+  const refs: Buffer[] = [];
+  if (comic.characterSheetUrl) {
+    try {
+      const sheetBuffer = await storage.getImageBuffer(comic.characterSheetUrl);
+      refs.push(sheetBuffer);
+    } catch {
+      // Non-fatal
+    }
+  }
+  const prevPage = comic.pages.find((p) => p.pageNumber === pageNumber - 1);
+  if (prevPage) {
+    try {
+      const prevBuffer = await storage.getImageBuffer(
+        prevPage.versions[prevPage.selectedVersionIndex].imageUrl
+      );
+      refs.push(prevBuffer);
+    } catch {
+      // Non-fatal
+    }
+  }
+
+  const imageBuffer = await generatePageImage(prompt, refs);
   const versionIndex = 0;
   const imageUrl = await storage.uploadImage(id, pageNumber, versionIndex, imageBuffer);
 

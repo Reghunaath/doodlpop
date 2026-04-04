@@ -115,6 +115,44 @@ The user's feedback on what to change:
 Rewrite the script incorporating this feedback while keeping the same structure requirements.`;
 }
 
+// ---- Character Sheet Generation ----
+
+export function characterSheetPrompt(
+  script: Script,
+  artStyle: ArtStylePreset,
+  customStylePrompt?: string
+): string {
+  const artStyleDescription = getArtStyleDescription(artStyle, customStylePrompt);
+
+  // Extract unique character names from all dialogue across all pages
+  const characterNames = new Set<string>();
+  for (const page of script.pages) {
+    for (const panel of page.panels) {
+      for (const line of panel.dialogue) {
+        if (line.speaker && line.speaker.trim()) {
+          characterNames.add(line.speaker.trim());
+        }
+      }
+    }
+  }
+
+  const characters = Array.from(characterNames);
+
+  return `Generate a character reference sheet in ${artStyleDescription} style.
+
+This sheet will be used as a visual reference for generating comic book pages. Draw each character clearly on a clean background.
+
+Characters to include:
+${characters.map((name, i) => `${i + 1}. ${name} — show front view, side view, and one expressive pose. Label each character clearly.`).join("\n")}
+
+Important:
+- Clean white or neutral background.
+- Show each character at full body scale.
+- Make character designs distinct and memorable.
+- Style must be: ${artStyleDescription}
+- This is a reference sheet, not a comic page — no panels, no speech bubbles, no story.`;
+}
+
 // ---- Stage 5: Panel Image Generation ----
 
 export function generatePageImagePrompt(

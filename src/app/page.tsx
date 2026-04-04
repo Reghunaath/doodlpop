@@ -1,4 +1,5 @@
 import PromptForm from "@/frontend/landing/PromptForm";
+import PageSlider from "@/frontend/landing/PageSlider";
 
 
 export default function LandingPage() {
@@ -131,6 +132,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── PAGE COUNT SLIDER ───────────────────────────── */}
+      <PageSlider />
 
       {/* ── CTA ─────────────────────────────────────────── */}
       <section className="flex justify-center px-4 pb-24">

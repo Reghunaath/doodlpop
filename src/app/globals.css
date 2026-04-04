@@ -70,6 +70,47 @@
   font-family: var(--font-epilogue), sans-serif;
 }
 
+/* ── Comic range slider ───────────────────────────────── */
+
+.comic-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  background: #000;
+  outline: none;
+  cursor: pointer;
+}
+
+.comic-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 36px;
+  height: 36px;
+  background: #ba0015;
+  border: 4px solid #000;
+  box-shadow: 3px 3px 0px 0px #000;
+  cursor: grab;
+  transform: rotate(45deg);
+  transition: transform 75ms;
+}
+
+.comic-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: rotate(45deg) scale(1.15);
+}
+
+.comic-slider::-moz-range-thumb {
+  width: 36px;
+  height: 36px;
+  background: #ba0015;
+  border: 4px solid #000;
+  box-shadow: 3px 3px 0px 0px #000;
+  cursor: grab;
+  transform: rotate(45deg);
+  border-radius: 0;
+}
+
 /* ── Base ─────────────────────────────────────────────── */
 
 body {

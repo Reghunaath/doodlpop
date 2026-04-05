@@ -1,7 +1,7 @@
 // src/backend/lib/ai/prompts.ts
 // All prompt template functions. Accept comic data, return prompt strings.
 
-import { ArtStylePreset, Script, ScriptPage } from "../types";
+import { ArtStylePreset, CharacterDescription, Script, ScriptPage } from "../types";
 import { ART_STYLE_PRESETS, IMAGE_ASPECT_RATIO } from "../constants";
 
 function getArtStyleDescription(
@@ -66,11 +66,20 @@ Rules:
 - Dialogue should be natural and fit the genre.
 - Captions are optional narrator text.
 - The story must have a clear beginning, middle, and end.
+- Include a "characters" array listing every named character in the story with detailed, consistent visual descriptions. These descriptions will be used as reference for image generation, so be very specific about visual details.
 - Respond with ONLY valid JSON matching this exact structure, no other text:
 
 {
   "title": "string",
   "synopsis": "string (2-3 sentences)",
+  "characters": [
+    {
+      "name": "Character Name",
+      "appearance": "Detailed physical description: age, height, build, hair color and style, eye color, skin tone, distinguishing features",
+      "clothing": "Default outfit: specific garments, colors, accessories",
+      "personality": "2-3 key personality traits that affect expressions and body language"
+    }
+  ],
   "pages": [
     {
       "pageNumber": 1,
@@ -124,26 +133,48 @@ export function characterSheetPrompt(
 ): string {
   const artStyleDescription = getArtStyleDescription(artStyle, customStylePrompt);
 
-  // Extract unique character names from all dialogue across all pages
-  const characterNames = new Set<string>();
-  for (const page of script.pages) {
-    for (const panel of page.panels) {
-      for (const line of panel.dialogue) {
-        if (line.speaker && line.speaker.trim()) {
-          characterNames.add(line.speaker.trim());
+  let characterBlock: string;
+
+  if (script.characters && script.characters.length > 0) {
+    // Use rich descriptions from script generation
+    characterBlock = script.characters
+      .map((char, i) => {
+        const details = [
+          `Appearance: ${char.appearance}`,
+          char.clothing ? `Clothing: ${char.clothing}` : null,
+          char.personality ? `Personality (inform expressions): ${char.personality}` : null,
+        ]
+          .filter(Boolean)
+          .join("\n   ");
+        return `${i + 1}. ${char.name}\n   ${details}\n   Show: front view, side view, and one expressive pose. Label clearly.`;
+      })
+      .join("\n");
+  } else {
+    // Fallback: extract from dialogue speakers (backward compat)
+    const characterNames = new Set<string>();
+    for (const page of script.pages) {
+      for (const panel of page.panels) {
+        for (const line of panel.dialogue) {
+          if (line.speaker && line.speaker.trim()) {
+            characterNames.add(line.speaker.trim());
+          }
         }
       }
     }
+    characterBlock = Array.from(characterNames)
+      .map(
+        (name, i) =>
+          `${i + 1}. ${name} — show front view, side view, and one expressive pose. Label each character clearly.`
+      )
+      .join("\n");
   }
-
-  const characters = Array.from(characterNames);
 
   return `Generate a character reference sheet in ${artStyleDescription} style.
 
 This sheet will be used as a visual reference for generating comic book pages. Draw each character clearly on a clean background.
 
 Characters to include:
-${characters.map((name, i) => `${i + 1}. ${name} — show front view, side view, and one expressive pose. Label each character clearly.`).join("\n")}
+${characterBlock}
 
 Important:
 - Clean white or neutral background.
@@ -162,7 +193,8 @@ export function generatePageImagePrompt(
   totalPages: number,
   customStylePrompt?: string,
   hasCharacterSheet?: boolean,
-  hasPreviousPage?: boolean
+  hasPreviousPage?: boolean,
+  characters?: CharacterDescription[]
 ): string {
   const artStyleDescription = getArtStyleDescription(artStyle, customStylePrompt);
   const panelCount = scriptPage.panels.length;
@@ -201,10 +233,33 @@ ${dialogueLines}${caption ? "\n" + caption : ""}`;
       ? `\nReference images provided:\n${refInstructions.join("\n")}\n`
       : "";
 
+  // Build character description block for textual reinforcement
+  let characterBlock = "";
+  if (characters && characters.length > 0) {
+    const pageText = scriptPage.panels
+      .map((p) => [p.description, ...p.dialogue.map((d) => d.speaker)].join(" "))
+      .join(" ")
+      .toLowerCase();
+
+    const relevantChars = characters.filter((c) =>
+      pageText.includes(c.name.toLowerCase())
+    );
+
+    if (relevantChars.length > 0) {
+      characterBlock = `\nCharacter appearance reference (maintain these designs exactly):\n${relevantChars
+        .map((c) => {
+          const parts = [`- ${c.name}: ${c.appearance}`];
+          if (c.clothing) parts.push(`  Outfit: ${c.clothing}`);
+          return parts.join("\n");
+        })
+        .join("\n")}\n`;
+    }
+  }
+
   return `Create a single comic book page illustration in ${artStyleDescription} style.
 
 This is page ${scriptPage.pageNumber} of ${totalPages} in a comic called "${comicTitle}".
-${refBlock}
+${refBlock}${characterBlock}
 The page has ${panelCount} panels arranged in a comic book layout:
 
 ${panelDescriptions}

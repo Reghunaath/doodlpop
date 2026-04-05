@@ -54,9 +54,17 @@ export interface FollowUpQuestion {
   question: string;
 }
 
+export interface CharacterDescription {
+  name: string;
+  appearance: string;   // Physical traits: height, build, hair, skin, distinguishing features
+  clothing: string;     // Default outfit
+  personality: string;  // Key traits (informs expressions/poses in images)
+}
+
 export interface Script {
   title: string;
   synopsis: string;
+  characters?: CharacterDescription[];
   pages: ScriptPage[];
 }
 

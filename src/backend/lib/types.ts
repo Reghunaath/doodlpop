@@ -131,6 +131,7 @@ export interface ApproveComicRequest {
 
 export interface GeneratePageRequest {
   pageNumber: number;
+  feedback?: string;
 }
 
 export interface GeneratePageResponse {

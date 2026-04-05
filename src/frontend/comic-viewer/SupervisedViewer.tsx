@@ -110,7 +110,7 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
     setIsRegenerating(true);
     setError(null);
     try {
-      const res = await regeneratePage(comicId, { pageNumber: currentPageNumber });
+      const res = await regeneratePage(comicId, { pageNumber: currentPageNumber, feedback: notes });
       setCurrentPage(res.page);
       setSelectedVersion(res.page.selectedVersionIndex);
       setNotes("");

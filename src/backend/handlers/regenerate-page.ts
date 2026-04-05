@@ -18,7 +18,7 @@ export async function handleRegeneratePage(
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { pageNumber } = body;
+  const { pageNumber, feedback } = body;
 
   if (typeof pageNumber !== "number" || pageNumber < 1) {
     return NextResponse.json({ error: "Invalid pageNumber" }, { status: 400 });
@@ -86,7 +86,7 @@ export async function handleRegeneratePage(
     }
   }
 
-  const prompt = generatePageImagePrompt(
+  let prompt = generatePageImagePrompt(
     scriptPage,
     comic.artStyle,
     comic.script.title,
@@ -96,6 +96,10 @@ export async function handleRegeneratePage(
     hasPreviousPage,
     comic.script.characters
   );
+
+  if (feedback && feedback.trim()) {
+    prompt += `\n\nDIRECTOR'S NOTES (apply these changes to the regenerated page):\n${feedback.trim()}`;
+  }
 
   const imageBuffer = await generatePageImage(prompt, refs);
   const versionIndex = page.versions.length;

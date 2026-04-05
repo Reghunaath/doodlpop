@@ -266,3 +266,50 @@ CONSTRAINTS:
 INTERPRETATION:
 This is page ${scriptPage.pageNumber} of ${totalPages}. ${getPacingNote(scriptPage.pageNumber, totalPages)}`;
 }
+
+// ---- Panel Edit: targeted single-panel revision ----
+
+export function panelEditImagePrompt(
+  scriptPage: ScriptPage,
+  artStyle: ArtStylePreset,
+  comicTitle: string,
+  totalPages: number,
+  editingPanelNumber: number,
+  newDescription: string,
+  customStylePrompt?: string
+): string {
+  // Build a modified script page with only the edited panel's description overridden
+  const modifiedPage: ScriptPage = {
+    ...scriptPage,
+    panels: scriptPage.panels.map((panel) =>
+      panel.panelNumber === editingPanelNumber
+        ? { ...panel, description: newDescription }
+        : panel
+    ),
+  };
+
+  const otherPanelNums = scriptPage.panels
+    .filter((p) => p.panelNumber !== editingPanelNumber)
+    .map((p) => `Panel ${p.panelNumber}`)
+    .join(", ");
+
+  // Base prompt: character sheet = ref[0], no previous page (we'll describe ref[1] ourselves)
+  const basePrompt = generatePageImagePrompt(
+    modifiedPage,
+    artStyle,
+    comicTitle,
+    totalPages,
+    customStylePrompt,
+    true,  // hasCharacterSheet → ref[0] described as character sheet
+    false  // hasPreviousPage → we handle ref[1] below
+  );
+
+  const revisionHeader = `PANEL REVISION MODE — targeted single-panel edit:
+The SECOND attached reference image is the CURRENT VERSION of this page as previously generated.
+${otherPanelNums ? `Keep ${otherPanelNums} EXACTLY as they appear in the current version — identical composition, characters, colors, speech bubbles, panel borders, and linework. Do NOT redraw or alter them.` : ""}
+Only Panel ${editingPanelNumber} should be re-drawn with its updated description.
+
+`;
+
+  return revisionHeader + basePrompt;
+}

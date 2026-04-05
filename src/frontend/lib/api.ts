@@ -10,6 +10,7 @@ import type {
   ApproveComicRequest,
   GeneratePageRequest,
   GeneratePageResponse,
+  EditPanelRequest,
   SelectPageVersionRequest,
   GenerateAllResponse,
   RandomIdeaResponse,
@@ -121,6 +122,17 @@ export function selectPageVersion(
 ): Promise<{ success: true }> {
   return apiFetch(`/api/comic/${id}/page/select`, {
     method: "PUT",
+    body: JSON.stringify(req),
+  });
+}
+
+// POST /api/comic/[id]/page/edit-panel
+export function editPanel(
+  id: string,
+  req: EditPanelRequest
+): Promise<GeneratePageResponse> {
+  return apiFetch(`/api/comic/${id}/page/edit-panel`, {
+    method: "POST",
     body: JSON.stringify(req),
   });
 }

@@ -169,16 +169,6 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
     ? "READY TO BRING THIS PAGE TO LIFE? HIT THAT GENERATE BUTTON!"
     : "REVIEW THIS PAGE! LOVE IT? HIT THE SAGA CONTINUES! NOT HAPPY? GIVE NOTES AND RE-INK!";
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-surface ben-day-dots">
-        <div className="bg-secondary-bg ink-border ink-shadow px-12 py-8 animate-pulse">
-          <span className="font-headline text-3xl font-black uppercase">LOADING...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-surface ben-day-dots">
       {/* ── NAV ─────────────────────────────────────────── */}
@@ -286,7 +276,7 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
 
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
                 const generated = comic?.pages.find((p) => p.pageNumber === pageNum);
-                const isApproved = isComplete || (generated && pageNum < currentPageNumber);
+                const isApproved = isComplete || pageNum < currentPageNumber;
                 const isCurrent = pageNum === currentPageNumber && !isComplete;
                 return (
                   <div
@@ -368,7 +358,7 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
                 </div>
 
                 {/* Generating overlay */}
-                {isGeneratingPage && (
+                {(isLoading || isGeneratingPage) && (
                   <div className="flex flex-col items-center justify-center gap-6 py-16">
                     <div className="bg-secondary-bg ink-border ink-shadow px-12 py-8 animate-pulse" style={{ transform: "rotate(-1deg)" }}>
                       <span className="font-headline text-3xl font-black uppercase">

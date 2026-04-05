@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,900;1,900&amp;family=Be+Vietnam+Pro:wght@400;700&amp;family=Space+Grotesk:wght@700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-error-container": "#510017",
+                    "tertiary-fixed-dim": "#43baec",
+                    "on-error": "#ffefef",
+                    "primary-dim": "#a40011",
+                    "surface-container-highest": "#dfdcdc",
+                    "error": "#b41340",
+                    "on-primary-fixed": "#000000",
+                    "on-primary": "#ffefed",
+                    "inverse-surface": "#0e0e0e",
+                    "on-primary-container": "#4f0004",
+                    "primary-container": "#ff766c",
+                    "tertiary-container": "#54c7fa",
+                    "surface-variant": "#dfdcdc",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed-variant": "#00475f",
+                    "surface-container-high": "#e5e2e1",
+                    "secondary-fixed": "#fddc00",
+                    "primary-fixed": "#ff766c",
+                    "on-tertiary": "#e6f5ff",
+                    "on-background": "#2f2e2e",
+                    "error-dim": "#a70138",
+                    "inverse-on-surface": "#9e9c9c",
+                    "on-tertiary-fixed": "#002635",
+                    "surface-dim": "#d6d4d3",
+                    "tertiary-fixed": "#54c7fa",
+                    "secondary-dim": "#5c4f00",
+                    "on-secondary": "#fff3c5",
+                    "surface-container": "#eae7e7",
+                    "on-secondary-fixed-variant": "#665800",
+                    "primary": "#ba0015",
+                    "secondary-fixed-dim": "#edce00",
+                    "on-tertiary-container": "#003e53",
+                    "surface-bright": "#f9f6f5",
+                    "on-secondary-container": "#5b4e00",
+                    "secondary-container": "#fddc00",
+                    "inverse-primary": "#ff544c",
+                    "tertiary": "#006383",
+                    "outline": "#787676",
+                    "tertiary-dim": "#005673",
+                    "on-surface-variant": "#5c5b5b",
+                    "error-container": "#f74b6d",
+                    "surface-tint": "#ba0015",
+                    "on-surface": "#2f2e2e",
+                    "background": "#f9f6f5",
+                    "secondary": "#6a5b00",
+                    "on-primary-fixed-variant": "#600006",
+                    "primary-fixed-dim": "#ff5a52",
+                    "on-secondary-fixed": "#463b00",
+                    "outline-variant": "#afacac",
+                    "surface-container-low": "#f3f0ef",
+                    "surface": "#f9f6f5"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Epilogue"],
+                    "body": ["Be Vietnam Pro"],
+                    "label": ["Space Grotesk"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .ben-day-dots {
+            background-image: radial-gradient(rgba(0,0,0,0.1) 1px, transparent 1px);
+            background-size: 8px 8px;
+        }
+        .comic-shadow {
+            box-shadow: 6px 6px 0px 0px rgba(0,0,0,1);
+        }
+        .comic-shadow-large {
+            box-shadow: 10px 10px 0px 0px rgba(0,0,0,1);
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface selection:bg-secondary-container">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full border-b-4 border-black dark:border-white bg-[#f9f6f5] dark:bg-stone-900 z-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex justify-between items-center px-6 py-4">
+<div class="flex items-center gap-4">
+<h1 class="text-3xl font-black text-[#ba0015] dark:text-[#ff4d4d] -rotate-2 font-['Epilogue'] uppercase italic tracking-tighter">COMIC PULP</h1>
+</div>
+<nav class="hidden md:flex gap-8">
+<a class="text-black dark:text-white font-['Epilogue'] font-black uppercase italic tracking-tighter hover:scale-105 hover:-rotate-1 transition-transform" href="#">Gallery</a>
+<a class="text-[#ba0015] dark:text-[#ff4d4d] underline decoration-4 underline-offset-4 font-['Epilogue'] font-black uppercase italic tracking-tighter hover:scale-105 hover:-rotate-1 transition-transform" href="#">Home</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-2xl text-black dark:text-white hover:scale-105 transition-transform" data-icon="share">share</button>
+<button class="material-symbols-outlined text-2xl text-black dark:text-white hover:scale-105 transition-transform" data-icon="bookmark">bookmark</button>
+<img alt="User profile" class="w-10 h-10 border-2 border-black rounded-none comic-shadow" data-alt="Stylized comic book avatar of a user in high contrast black and white ink style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7-GP-T1sUAnAEGF8mMnvdE5OB5I3YLnH9EDHzyqWswR2yTJ83hq8Bg61mdQYNY4XLLYzfOUvlGjX1YuX8lVBYk_vGyLeJtmoqMYTR8sRXRCErz1D4eX1UyY1o99yg0YVXP7BE26nfbyPVamkpAPVWA4HhWZ7Sn6VWJWGILyLiXkOD-ZxpDio_APmaaKgfVTh_LEHQ0s1sYiRmlsd7ReHC-QHUDLHEU0MeLMDgWBMzAN0A_8NkiSlziX6u9tBy9EVD0N_7mmrCWenE"/>
+</div>
+</header>
+<main class="pt-24 pb-32 min-h-screen ben-day-dots px-4 max-w-7xl mx-auto">
+<!-- Header Controls Panel -->
+<div class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
+<!-- Navigation Left -->
+<button class="group relative bg-primary text-on-primary px-8 py-4 border-4 border-black -rotate-2 comic-shadow hover:scale-105 active:scale-95 transition-all">
+<span class="font-headline font-black text-2xl italic tracking-tighter uppercase">PREVIOUS PAGE</span>
+</button>
+<!-- Page Counter Panel -->
+<div class="bg-secondary-container border-4 border-black px-10 py-4 rotate-1 comic-shadow flex flex-col items-center">
+<span class="font-label text-black text-xs tracking-widest mb-1">STORY ARCH: THE NEON BLITZ</span>
+<span class="font-headline font-black text-3xl italic text-black uppercase">ISSUE #1 | PAGE 5 OF 20</span>
+</div>
+<!-- Navigation Right -->
+<button class="group relative bg-primary text-on-primary px-8 py-4 border-4 border-black rotate-2 comic-shadow hover:scale-105 active:scale-95 transition-all">
+<span class="font-headline font-black text-2xl italic tracking-tighter uppercase">NEXT PAGE</span>
+</button>
+</div>
+<!-- Main Comic Canvas -->
+<div class="bg-white border-4 border-black p-4 md:p-8 comic-shadow-large mb-12">
+<!-- Bento Grid Panel Layout -->
+<div class="grid grid-cols-12 grid-rows-6 gap-4 min-h-[1200px]">
+<!-- Splash Panel (Top Left) -->
+<div class="col-span-12 md:col-span-8 row-span-3 border-4 border-black relative overflow-hidden group">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="High energy comic splash page of a superhero in red armor fighting a mechanical dragon amidst a futuristic cityscape with heavy ink lines and halftone textures" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBevTzAZfXVATcRXxmFL0VMdhCCPH__KGk-VM14EH2FKohdBoOnDjJpqNs5tz3PNV_SUspP8cFUlC-sr4tf_j5qyxd6sXBmCuMSofRPhS7WNcfbiGGCxM4IEZDnRpgqqcI7PX3UuJIvqMEaxSx5KrkfTS2EXCJ8U8zey4vC5irwk6TLMJXtoLgG2uP8n4wpM0iSlE-kLb9XwXWPHKyHKsufNqgycYaCkPcAsR4biaziwWD73yZA5dsNXVua_QuCPJPh3xusljAUT6zM"/>
+<div class="absolute top-4 left-4 bg-secondary-container border-2 border-black px-4 py-2 font-headline italic font-black text-lg -rotate-3 comic-shadow">
+                        MEANWHILE...
+                    </div>
+</div>
+<!-- Action Panel (Top Right) -->
+<div class="col-span-12 md:col-span-4 row-span-2 border-4 border-black relative overflow-hidden bg-tertiary-container">
+<img class="w-full h-full object-cover grayscale contrast-150 mix-blend-multiply" data-alt="Close up of a comic hero's glowing eye with energetic electric crackles in bright cyan and heavy black ink shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-LLiZ0kEQi5rxUtJxqIRKnikQjMPHj_P0lenTyGtRBPKw9U2hEFxuyclr6vh9RvMOGLhLJ-aX_mxyv67T7-SJlN0ckG1Dq5UFxFYe1G5I5Zj7kURVrhlKy2RjQSGf1OMa-SspRd-5KgcF73qlFmoiyN-a-YYdxhRDAk0Y4hKnUMy4EI2Fv1bMkMG6nIJDFS50BoaSDCsja4wqwRIvUaE6amxCtkFrJUJ6yYr3XJDYAMTpFWOBrktxMalX1TtPU3pTXBqzYuJ5hWdt"/>
+<div class="absolute bottom-4 right-4 bg-white border-2 border-black px-4 py-2 font-headline italic font-black text-xl rotate-2 comic-shadow text-primary">
+                        POW!
+                    </div>
+</div>
+<!-- Detail Panel (Middle Right) -->
+<div class="col-span-12 md:col-span-4 row-span-2 border-4 border-black overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="Technical schematic of a futuristic gauntlet in a vintage comic blueprint style with bright yellow and black colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClNefjOSuGWspvlKQpckoRWFWvDDXQQvvi0PKd7u_n2OvVN7WlKaWQCd5jJuMR5uQ6AAMoKrdqWceFt9QftG9a3e59HTutljZOP-hdvzBiU15Adk54Heg6hKeG5wuD8EFGS1G0yHm7RdzOJVVcGmeMruoFHG8WsSPVd7Vuwv65UOfjo9IJNToRkuAeDv2trXUOz2uSdNSAexj_nIzt_EuHh86oTBsF0yuMGHx7yGiu9EmLXQxETWSPt4miuvCILWA5cHfnAawjVsi9"/>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary border-2 border-black px-4 py-1 text-white font-label text-xs uppercase tracking-tighter -rotate-12">
+                        BIO-TECH ENGAGED
+                    </div>
+</div>
+<!-- Dynamic Strip (Bottom) -->
+<div class="col-span-12 md:col-span-4 row-span-2 border-4 border-black overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Cinematic shot of a hero leaping between skyscrapers at night with dramatic long shadows and vibrant neon lighting in comic book style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRjHJmjHEs4eaYo7tuGR0l5s9Q0RFovaCIAn8fBLaFVLvPoaoFgrn2MT4y56qbbYDbDQ-npKiFbDZspf25MOdep_VRaoPYhC3OdiWdBjOj1JkQmaCnxY5cIff4YRQVpYj_UHyOlA1-yNBVEZJMH49-3yAPeyBtR0zV_NRMSIfrscdBpuGCoJasHYeUlJQHQ8vJhAK_mr3lRxxqQeCKVV_u1wND_ftGMO_snE2Il19JT7ZBeJw_1kaYDAy3QX43ktYuXAZ3B6sVVFjV"/>
+</div>
+<!-- Narrative Box (Bottom Left) -->
+<div class="col-span-12 md:col-span-4 row-span-2 border-4 border-black bg-surface-container-low p-6 flex flex-col justify-center gap-4 ben-day-dots">
+<div class="w-12 h-1 bg-black"></div>
+<p class="font-headline italic text-2xl font-black leading-tight text-on-surface">
+                        "THE CITY CRIED OUT FOR A CHAMPION... BUT ALL THEY GOT WAS ME."
+                    </p>
+<div class="flex justify-end">
+<div class="w-8 h-8 rounded-full border-2 border-black bg-secondary"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Action Bubble -->
+<div class="fixed bottom-24 right-8 z-40">
+<button class="w-20 h-20 bg-secondary-container border-4 border-black flex items-center justify-center rotate-12 comic-shadow hover:scale-110 active:scale-95 transition-transform group">
+<span class="material-symbols-outlined text-4xl text-black group-hover:rotate-12 transition-transform" data-icon="edit">edit</span>
+<div class="absolute -top-10 -left-12 bg-white border-2 border-black px-3 py-1 font-label text-[10px] italic comic-shadow rotate-[-15deg]">
+                    ADD COMMENT
+                </div>
+</button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 bg-[#fddc00] dark:bg-yellow-600 bg-[url('https://www.transparenttextures.com/patterns/halftone-dots.png')] bg-opacity-10 border-t-4 border-black">
+<button class="flex flex-col items-center justify-center text-black p-2 font-['Space_Grotesk'] font-bold text-xs uppercase hover:bg-white hover:text-black transition-colors active:translate-y-1 duration-100">
+<span class="material-symbols-outlined mb-1" data-icon="arrow_back_ios">arrow_back_ios</span>
+<span>Previous</span>
+</button>
+<button class="flex flex-col items-center justify-center text-black p-2 font-['Space_Grotesk'] font-bold text-xs uppercase hover:bg-white hover:text-black transition-colors active:translate-y-1 duration-100">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span>Home</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-black text-[#fddc00] rounded-none p-2 border-2 border-black font-['Space_Grotesk'] font-bold text-xs uppercase hover:bg-white hover:text-black transition-colors active:translate-y-1 duration-100">
+<span class="material-symbols-outlined mb-1" data-icon="grid_view">grid_view</span>
+<span>Gallery</span>
+</button>
+<button class="flex flex-col items-center justify-center text-black p-2 font-['Space_Grotesk'] font-bold text-xs uppercase hover:bg-white hover:text-black transition-colors active:translate-y-1 duration-100">
+<span class="material-symbols-outlined mb-1" data-icon="arrow_forward_ios">arrow_forward_ios</span>
+<span>Next</span>
+</button>
+</nav>
+</body></html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>INKED GENERATOR | CHARACTER &amp; STORY BUILDER</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@700;800;900&amp;family=Be+Vietnam+Pro:wght@400;500;700&amp;family=Space+Grotesk:wght@500;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-variant": "#dfdcdc",
+                      "on-primary-fixed-variant": "#600006",
+                      "on-tertiary-container": "#003e53",
+                      "primary-fixed-dim": "#ff5a52",
+                      "on-primary-container": "#4f0004",
+                      "secondary-fixed": "#fddc00",
+                      "surface-tint": "#ba0015",
+                      "on-secondary-fixed": "#463b00",
+                      "on-primary-fixed": "#000000",
+                      "on-background": "#2f2e2e",
+                      "on-tertiary": "#e6f5ff",
+                      "primary-dim": "#a40011",
+                      "inverse-primary": "#ff544c",
+                      "on-secondary-container": "#5b4e00",
+                      "outline-variant": "#afacac",
+                      "tertiary": "#006383",
+                      "error": "#b41340",
+                      "background": "#f9f6f5",
+                      "error-container": "#f74b6d",
+                      "surface": "#f9f6f5",
+                      "primary-container": "#ff766c",
+                      "inverse-on-surface": "#9e9c9c",
+                      "secondary-dim": "#5c4f00",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-bright": "#f9f6f5",
+                      "on-surface": "#2f2e2e",
+                      "surface-dim": "#d6d4d3",
+                      "primary-fixed": "#ff766c",
+                      "tertiary-fixed-dim": "#43baec",
+                      "secondary": "#6a5b00",
+                      "secondary-fixed-dim": "#edce00",
+                      "on-tertiary-fixed-variant": "#00475f",
+                      "surface-container": "#eae7e7",
+                      "tertiary-container": "#54c7fa",
+                      "on-surface-variant": "#5c5b5b",
+                      "surface-container-highest": "#dfdcdc",
+                      "on-error-container": "#510017",
+                      "outline": "#787676",
+                      "tertiary-dim": "#005673",
+                      "on-tertiary-fixed": "#002635",
+                      "on-secondary-fixed-variant": "#665800",
+                      "on-primary": "#ffefed",
+                      "surface-container-high": "#e5e2e1",
+                      "surface-container-low": "#f3f0ef",
+                      "error-dim": "#a70138",
+                      "tertiary-fixed": "#54c7fa",
+                      "on-secondary": "#fff3c5",
+                      "on-error": "#ffefef",
+                      "secondary-container": "#fddc00",
+                      "primary": "#ba0015",
+                      "inverse-surface": "#0e0e0e"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "fontFamily": {
+                      "headline": ["Epilogue"],
+                      "body": ["Be Vietnam Pro"],
+                      "label": ["Space Grotesk"]
+              }
+            },
+          },
+        }
+    </script>
+<style>.material-symbols-outlined {
+    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 48
+    }
+.ben-day-dots {
+    background-image: radial-gradient(#000 1px, transparent 1px);
+    background-size: 8px 8px;
+    opacity: 0.05
+    }
+.ink-stroke-3 {
+    border-width: 3px;
+    border-style: solid
+    }
+.ink-stroke-4 {
+    border-width: 4px;
+    border-style: solid
+    }
+.ink-stroke-6 {
+    border-width: 6px;
+    border-style: solid
+    }
+.comic-shadow {
+    box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 1)
+    }
+.comic-shadow-sm {
+    box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 1)
+    }
+.carbon-fibre {
+    background-image: url(https://lh3.googleusercontent.com/aida-public/AB6AXuB53VKCm-SKrNuIqsolu9N0OGfv4CgTLoSXOhYQFhBDJKmej2SWE9iObaNO87LWz7fARj_32uBHLdZyTs-M1qoitvIhV1chq8p7sN0hDdVwxK55sHYxPXi56HLwjqiav5arScPuqDeiOblVF9RiEGO6mtlREWJj1hi7W1Xgmg1Z9VzpsvIi6JEwohoTvPqtMzdSyWV2o7o7Et1oaKV-9NqppO0CAbFzPKTAY-cDMgMNHvJ2BvQ3BDUDDZe4VnfnEjV7g0hEL5GNrvA)
+    }
+.wobbly-edge {
+    border-radius: 255px 15px 225px 15px/15px 225px 15px 255px
+    }
+.speech-tail::after {
+    content: "";
+    position: absolute;
+    bottom: -20px;
+    left: 40px;
+    border-width: 20px 20px 0 0;
+    border-style: solid;
+    border-color: black transparent transparent transparent
+    }
+.speech-tail-inner::after {
+    content: "";
+    position: absolute;
+    bottom: -14px;
+    left: 42px;
+    border-width: 16px 16px 0 0;
+    border-style: solid;
+    border-color: white transparent transparent transparent
+    }</style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-secondary-container">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center px-8 py-4 w-full bg-[#f9f6f5] dark:bg-slate-900 border-b-4 border-black dark:border-white carbon-fibre relative z-50">
+<div class="flex items-center gap-6">
+<span class="text-3xl font-black italic -rotate-2 text-[#ba0015] dark:text-red-500 drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] Epilogue">INKED GENERATOR</span>
+<nav class="hidden md:flex gap-8">
+<a class="font-bold text-xl uppercase tracking-tighter Epilogue text-black dark:text-slate-100 hover:scale-110 hover:-rotate-1 transition-transform" href="#">STORYBOARD</a>
+<a class="font-bold text-xl uppercase tracking-tighter Epilogue text-black dark:text-slate-100 hover:scale-110 hover:-rotate-1 transition-transform" href="#">ARCHIVE</a>
+<a class="font-bold text-xl uppercase tracking-tighter Epilogue text-black dark:text-slate-100 hover:scale-110 hover:-rotate-1 transition-transform" href="#">TUTORIALS</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-[#ba0015] text-white px-6 py-2 font-bold uppercase Epilogue italic -rotate-1 ink-stroke-3 border-black comic-shadow-sm hover:scale-105 active:scale-95 transition-all">UPGRADE!</button>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-3xl cursor-pointer hover:scale-110 transition-transform">account_circle</span>
+<span class="material-symbols-outlined text-3xl cursor-pointer hover:scale-110 transition-transform">settings</span>
+</div>
+</div>
+</header>
+<main class="min-h-screen relative overflow-hidden">
+<div class="absolute inset-0 ben-day-dots pointer-events-none"></div>
+<div class="max-w-6xl mx-auto px-4 py-12 relative z-10">
+<!-- Header Panel -->
+<div class="flex flex-col md:flex-row justify-between items-end mb-12 border-b-6 border-black pb-4">
+<div class="relative">
+<div class="bg-primary text-on-primary px-6 py-2 absolute -top-8 -left-2 -rotate-3 ink-stroke-3 border-black font-headline text-xl uppercase">ISSUE #2</div>
+<h1 class="text-6xl md:text-8xl font-black italic -rotate-1 tracking-tighter Epilogue text-on-surface uppercase drop-shadow-[4px_4px_0px_rgba(186,0,21,1)]">
+                        CHARACTER &amp; <br/>STORY BUILDER
+                    </h1>
+</div>
+<div class="bg-secondary-container p-4 ink-stroke-4 border-black comic-shadow max-w-xs rotate-2 hidden md:block">
+<p class="font-label text-sm uppercase leading-tight font-bold">FEATURING THE ALL-NEW INK-O-MATIC STORY GENERATION SYSTEM! ONLY 12¢</p>
+</div>
+</div>
+<!-- Chat Interface Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Sidebar Panel (Editor Persona) -->
+<div class="lg:col-span-3 flex flex-col items-center">
+<div class="relative mb-6">
+<div class="w-48 h-48 rounded-full overflow-hidden ink-stroke-6 border-black comic-shadow bg-surface-container-high relative">
+<img alt="comic editor headshot" class="w-full h-full object-cover" data-alt="Classic silver age comic book editor headshot, bold black ink outlines, halftone coloring, dramatic lighting, 1960s illustration style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHIAIe6F7HUWdBqByLsrMX2uDXs_bmLMb4fGz37vBLLNTD17bHQ3yIpGQW1fMHmpY9eLFPDJdm-_vhyrRPWOGoypfMMKEfEXKi05Qy-pFTnqf3warTVa_3YXRdBz6MGXw-5CeoHNKLaf08AA3N3rh2zJiiibT8J684BR7s-iyaFaKKOcB0aFrIb6uQFjj8juFPwX_UsDishrxBC6zyll8u12JuxLvVlGp-vLAlYBo8dRcQJn77dHxJ1rERMRC7WCInMc4JWGv7RVs"/>
+<div class="absolute inset-0 ben-day-dots opacity-20"></div>
+</div>
+<div class="absolute -bottom-4 -right-2 bg-secondary-container px-4 py-1 ink-stroke-3 border-black -rotate-6 font-headline text-lg">EDITOR-IN-CHIEF</div>
+</div>
+<div class="bg-white p-6 ink-stroke-4 border-black comic-shadow relative speech-tail speech-tail-inner w-full">
+<p class="font-body font-bold text-center leading-snug">"LISTEN UP, TRUE BELIEVER! WE NEED THE SCOOP ON YOUR NEXT BIG HERO! ANSWER ME TRUTHFULLY!"</p>
+</div>
+</div>
+<!-- Chat Canvas -->
+<div class="lg:col-span-9 space-y-12">
+<!-- Chat History (Bubbles) -->
+<div class="space-y-8">
+<!-- Message 1 (Editor) -->
+<div class="flex justify-start">
+<div class="max-w-[80%] bg-surface-container-lowest p-6 ink-stroke-4 border-black comic-shadow relative">
+<p class="font-headline text-xl uppercase mb-2 text-primary">Question 1: The Origin</p>
+<p class="font-body text-lg italic">"Every legend has a beginning. Was yours born from the stars, or the shadows of the city?"</p>
+</div>
+</div>
+<!-- Message 2 (User Answer) -->
+<div class="flex justify-end">
+<div class="max-w-[70%] bg-tertiary-container p-6 wobbly-edge ink-stroke-4 border-black comic-shadow-sm rotate-1">
+<span class="font-label text-xs uppercase opacity-70 block mb-1">Your Choice</span>
+<p class="font-headline text-2xl uppercase tracking-widest text-on-tertiary-container">COSMIC!</p>
+</div>
+</div>
+<!-- Message 3 (Editor - Active) -->
+<div class="flex justify-start">
+<div class="max-w-[85%] bg-white p-8 ink-stroke-4 border-black comic-shadow relative w-full">
+<p class="font-headline text-2xl uppercase mb-4 text-primary">Question 2: The Core Motivation</p>
+<p class="font-body text-xl font-bold mb-8">"What drives this champion of yours? Is it a thirst for JUSTICE, a burden of RESPONSIBILITY, or perhaps... REVENGE?"</p>
+<!-- Action Buttons (Starbursts/Bubbles) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+<button class="group relative py-6 px-4 bg-secondary-container ink-stroke-3 border-black comic-shadow hover:scale-105 active:scale-95 transition-all rotate-2">
+<div class="absolute inset-0 ben-day-dots opacity-10"></div>
+<span class="font-headline text-3xl uppercase tracking-tighter block group-hover:italic transition-all">JUSTICE!</span>
+</button>
+<button class="group relative py-6 px-4 bg-tertiary-container ink-stroke-3 border-black comic-shadow hover:scale-105 active:scale-95 transition-all -rotate-1">
+<div class="absolute inset-0 ben-day-dots opacity-10"></div>
+<span class="font-headline text-2xl uppercase tracking-tighter block group-hover:italic transition-all">RESPONSIBILITY</span>
+</button>
+<button class="group relative py-6 px-4 bg-primary text-on-primary ink-stroke-3 border-black comic-shadow hover:scale-105 active:scale-95 transition-all rotate-1">
+<div class="absolute inset-0 ben-day-dots opacity-10"></div>
+<span class="font-headline text-3xl uppercase tracking-tighter block group-hover:italic transition-all">REVENGE!</span>
+</button>
+</div>
+<!-- Text Input (Hand-drawn) -->
+<div class="relative pt-4 border-t-4 border-dashed border-outline-variant">
+<label class="font-label text-xs uppercase absolute -top-3 left-4 bg-white px-2 font-bold">OR WRITE YOUR OWN...</label>
+<div class="flex gap-4">
+<input class="w-full bg-surface-container-low ink-stroke-3 border-black rounded-lg p-4 font-body text-lg focus:ring-0 focus:border-primary outline-none transition-all" placeholder="Type your hero's destiny here..." type="text"/>
+<button class="bg-black text-white px-6 py-2 ink-stroke-3 border-black flex items-center justify-center hover:bg-primary transition-colors">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Progress Indicator -->
+<div class="flex items-center justify-center gap-4 py-8">
+<div class="w-12 h-12 rounded-full bg-primary ink-stroke-3 border-black flex items-center justify-center text-on-primary font-headline text-xl">1</div>
+<div class="h-1 w-12 bg-black"></div>
+<div class="w-12 h-12 rounded-full bg-primary ink-stroke-3 border-black flex items-center justify-center text-on-primary font-headline text-xl">2</div>
+<div class="h-1 w-12 bg-outline-variant"></div>
+<div class="w-12 h-12 rounded-full bg-surface-container-high ink-stroke-3 border-black flex items-center justify-center font-headline text-xl opacity-50">3</div>
+<div class="h-1 w-12 bg-outline-variant"></div>
+<div class="w-12 h-12 rounded-full bg-surface-container-high ink-stroke-3 border-black flex items-center justify-center font-headline text-xl opacity-50">4</div>
+<div class="h-1 w-12 bg-outline-variant"></div>
+<div class="w-12 h-12 rounded-full bg-surface-container-high ink-stroke-3 border-black flex items-center justify-center font-headline text-xl opacity-50">5</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="flex flex-col md:flex-row justify-between items-center px-12 py-8 w-full bg-[#fddc00] dark:bg-yellow-600 border-t-4 border-black dark:border-slate-800 carbon-fibre">
+<span class="font-bold uppercase Epilogue text-sm text-black">© 1966 LIVING INK PUBLISHING</span>
+<div class="flex gap-8 mt-4 md:mt-0">
+<a class="font-bold uppercase Epilogue text-sm text-black/70 hover:italic transition-all" href="#">PRIVACY</a>
+<a class="font-bold uppercase Epilogue text-sm text-black/70 hover:italic transition-all" href="#">LICENSE</a>
+<a class="font-bold uppercase Epilogue text-sm text-black/70 hover:italic transition-all" href="#">CREDITS</a>
+</div>
+</footer>
+<!-- Decorative Corner Element -->
+<div class="fixed bottom-4 right-4 w-24 h-24 pointer-events-none z-0 hidden lg:block opacity-30">
+<svg class="w-full h-full fill-primary" viewbox="0 0 100 100">
+<polygon points="50,5 61,35 95,35 67,57 78,91 50,70 22,91 33,57 5,35 39,35"></polygon>
+</svg>
+</div>
+</body></html>

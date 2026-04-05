@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@700;800;900&amp;family=Be+Vietnam+Pro:wght@400;500;700&amp;family=Space+Grotesk:wght@500;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-primary": "#ff544c",
+                      "error-container": "#f74b6d",
+                      "on-tertiary-fixed": "#002635",
+                      "surface-dim": "#d6d4d3",
+                      "on-secondary-fixed": "#463b00",
+                      "on-secondary": "#fff3c5",
+                      "on-surface": "#2f2e2e",
+                      "on-background": "#2f2e2e",
+                      "primary-fixed": "#ff766c",
+                      "surface-container-low": "#f3f0ef",
+                      "inverse-surface": "#0e0e0e",
+                      "surface-container": "#eae7e7",
+                      "on-secondary-container": "#5b4e00",
+                      "on-tertiary-fixed-variant": "#00475f",
+                      "error": "#b41340",
+                      "on-primary": "#ffefed",
+                      "on-error-container": "#510017",
+                      "tertiary-container": "#54c7fa",
+                      "surface-tint": "#ba0015",
+                      "secondary-fixed-dim": "#edce00",
+                      "surface-container-high": "#e5e2e1",
+                      "secondary": "#6a5b00",
+                      "outline": "#787676",
+                      "on-primary-container": "#4f0004",
+                      "tertiary-fixed-dim": "#43baec",
+                      "on-secondary-fixed-variant": "#665800",
+                      "on-error": "#ffefef",
+                      "secondary-dim": "#5c4f00",
+                      "primary-dim": "#a40011",
+                      "on-primary-fixed": "#000000",
+                      "error-dim": "#a70138",
+                      "inverse-on-surface": "#9e9c9c",
+                      "on-tertiary": "#e6f5ff",
+                      "secondary-fixed": "#fddc00",
+                      "background": "#f9f6f5",
+                      "surface-container-lowest": "#ffffff",
+                      "primary-container": "#ff766c",
+                      "tertiary-fixed": "#54c7fa",
+                      "surface-variant": "#dfdcdc",
+                      "secondary-container": "#fddc00",
+                      "surface": "#f9f6f5",
+                      "on-tertiary-container": "#003e53",
+                      "tertiary": "#006383",
+                      "surface-bright": "#f9f6f5",
+                      "on-primary-fixed-variant": "#600006",
+                      "tertiary-dim": "#005673",
+                      "surface-container-highest": "#dfdcdc",
+                      "on-surface-variant": "#5c5b5b",
+                      "primary-fixed-dim": "#ff5a52",
+                      "outline-variant": "#afacac",
+                      "primary": "#ba0015"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "fontFamily": {
+                      "headline": ["Epilogue"],
+                      "body": ["Be Vietnam Pro"],
+                      "label": ["Space Grotesk"]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+        .ben-day-dots {
+            background-image: radial-gradient(rgba(0,0,0,0.05) 1px, transparent 0);
+            background-size: 8px 8px;
+        }
+        .ink-stroke-4 { border-width: 4px; border-color: #000; }
+        .ink-shadow { box-shadow: 8px 8px 0px 0px rgba(0,0,0,1); }
+        .ink-shadow-sm { box-shadow: 4px 4px 0px 0px rgba(0,0,0,1); }
+        .action-starburst {
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+        .speech-bubble-tail::after {
+            content: '';
+            position: absolute;
+            bottom: -30px;
+            left: 50px;
+            border-width: 30px 30px 0 0;
+            border-style: solid;
+            border-color: black transparent transparent transparent;
+        }
+        .speech-bubble-tail::before {
+            content: '';
+            position: absolute;
+            bottom: -22px;
+            left: 54px;
+            border-width: 25px 25px 0 0;
+            border-style: solid;
+            border-color: white transparent transparent transparent;
+            z-index: 10;
+        }
+      </style>
+</head>
+<body class="bg-surface font-body text-on-surface ben-day-dots min-h-screen">
+<!-- TopNavBar -->
+<nav class="flex justify-between items-center px-8 py-4 w-full bg-[#f9f6f5] dark:bg-slate-900 border-b-4 border-black dark:border-white bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]">
+<div class="text-3xl font-black italic -rotate-2 text-[#ba0015] dark:text-red-500 drop-shadow-[4px_4px_0px_rgba(0,0,0,1)] Epilogue">
+            INKED GENERATOR
+        </div>
+<div class="hidden md:flex gap-8 font-bold text-xl uppercase tracking-tighter Epilogue items-center">
+<a class="text-[#ba0015] underline decoration-4 underline-offset-4 hover:scale-110 hover:-rotate-1 transition-transform" href="#">STORYBOARD</a>
+<a class="text-black dark:text-slate-100 hover:scale-110 hover:-rotate-1 transition-transform" href="#">ARCHIVE</a>
+<a class="text-black dark:text-slate-100 hover:scale-110 hover:-rotate-1 transition-transform" href="#">TUTORIALS</a>
+</div>
+<div class="flex items-center gap-6">
+<button class="bg-primary text-on-primary px-6 py-2 border-b-4 border-black ink-shadow-sm font-bold uppercase Epilogue hover:scale-110 transition-transform">UPGRADE!</button>
+<div class="flex gap-3">
+<span class="material-symbols-outlined text-2xl cursor-pointer hover:scale-110 transition-transform">account_circle</span>
+<span class="material-symbols-outlined text-2xl cursor-pointer hover:scale-110 transition-transform">settings</span>
+</div>
+</div>
+</nav>
+<main class="container mx-auto px-4 py-12">
+<!-- Centerpiece Hero -->
+<div class="text-center mb-16 relative">
+<div class="inline-block relative">
+<h1 class="text-7xl md:text-9xl font-black Epilogue text-primary italic -rotate-3 drop-shadow-[10px_10px_0px_rgba(0,0,0,1)] uppercase tracking-tighter leading-none mb-4">
+                    CREATE YOUR<br/>LEGEND!
+                </h1>
+<div class="absolute -top-10 -right-16 bg-secondary-container ink-stroke-4 ink-shadow-sm px-4 py-2 -rotate-12">
+<p class="font-headline text-black text-2xl font-black">ISSUE #1</p>
+</div>
+<div class="absolute -bottom-8 -left-12 bg-tertiary text-on-tertiary ink-stroke-4 ink-shadow-sm px-6 py-1 rotate-6">
+<p class="font-headline text-xl font-bold italic">SILVER AGE EDITION</p>
+</div>
+</div>
+</div>
+<!-- Prompt Area / Speech Bubble -->
+<div class="max-w-4xl mx-auto mb-20 relative px-4">
+<div class="bg-surface-container-lowest ink-stroke-4 ink-shadow p-8 md:p-12 relative speech-bubble-tail">
+<div class="absolute -top-6 left-8 bg-secondary-container ink-stroke-4 px-4 py-1">
+<label class="font-headline text-black font-extrabold uppercase tracking-widest">WRITE YOUR STORY...</label>
+</div>
+<textarea class="w-full bg-transparent border-none focus:ring-0 font-body text-2xl md:text-3xl placeholder-on-surface-variant italic min-h-[200px]" placeholder="In a world where ink comes to life, our hero discovers a hidden pen that draws portals to other dimensions..."></textarea>
+<button class="absolute -bottom-6 -right-4 bg-pink-500 text-white ink-stroke-4 ink-shadow-sm px-6 py-2 rotate-6 hover:scale-110 hover:-rotate-2 transition-transform active:scale-95 group">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-2xl">auto_fix_high</span>
+<span class="font-headline text-xl font-black uppercase tracking-tighter">SURPRISE ME!</span>
+</div>
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2 py-1 ink-stroke-4 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+        RANDOM PROMPT!
+    </div>
+</button></div>
+</div>
+<!-- Action Buttons Grid -->
+<div class="grid grid-cols-2 md:grid-cols-3 gap-12 max-w-5xl mx-auto mb-24">
+<!-- POW! (Primary Action) -->
+<button class="relative group">
+<div class="absolute inset-0 bg-primary-dim translate-x-3 translate-y-3 ink-stroke-4"></div>
+<div class="relative bg-primary text-on-primary ink-stroke-4 p-8 flex items-center justify-center hover:-translate-y-2 hover:-translate-x-1 transition-transform duration-75 active:scale-95">
+<span class="font-headline text-4xl md:text-5xl font-black italic uppercase -rotate-6">POW!</span>
+</div>
+<div class="absolute -top-4 -right-4 bg-white ink-stroke-4 px-2 py-1 rotate-12 scale-0 group-hover:scale-100 transition-transform">
+<p class="text-xs font-black">GENERATE!</p>
+</div>
+</button>
+<!-- WHAM! -->
+<button class="relative group">
+<div class="absolute inset-0 bg-on-secondary translate-x-3 translate-y-3 ink-stroke-4"></div>
+<div class="relative bg-secondary-container text-black ink-stroke-4 p-8 flex items-center justify-center hover:-translate-y-2 hover:-translate-x-1 transition-transform duration-75 active:scale-95">
+<span class="font-headline text-4xl md:text-5xl font-black italic uppercase rotate-3">WHAM!</span>
+</div>
+</button>
+<!-- ZAP! -->
+<button class="relative group">
+<div class="absolute inset-0 bg-tertiary-dim translate-x-3 translate-y-3 ink-stroke-4"></div>
+<div class="relative bg-tertiary text-on-tertiary ink-stroke-4 p-8 flex items-center justify-center hover:-translate-y-2 hover:-translate-x-1 transition-transform duration-75 active:scale-95">
+<span class="font-headline text-4xl md:text-5xl font-black italic uppercase -rotate-12">ZAP!</span>
+</div>
+</button>
+<!-- BANG! -->
+<button class="relative group">
+<div class="absolute inset-0 bg-on-primary-fixed-variant translate-x-3 translate-y-3 ink-stroke-4"></div>
+<div class="relative bg-primary-fixed text-on-primary-fixed ink-stroke-4 p-8 flex items-center justify-center hover:-translate-y-2 hover:-translate-x-1 transition-transform duration-75 active:scale-95">
+<span class="font-headline text-4xl md:text-5xl font-black italic uppercase rotate-6">BANG!</span>
+</div>
+</button>
+<!-- KRACK! -->
+<button class="relative group">
+<div class="absolute inset-0 bg-on-surface-variant translate-x-3 translate-y-3 ink-stroke-4"></div>
+<div class="relative bg-surface-container-high text-on-surface ink-stroke-4 p-8 flex items-center justify-center hover:-translate-y-2 hover:-translate-x-1 transition-transform duration-75 active:scale-95">
+<span class="font-headline text-4xl md:text-5xl font-black italic uppercase -rotate-2">KRACK!</span>
+</div>
+</button>
+<!-- BOOM! -->
+<button class="relative group">
+<div class="absolute inset-0 bg-on-secondary-container translate-x-3 translate-y-3 ink-stroke-4"></div>
+<div class="relative bg-secondary-fixed text-on-secondary-fixed ink-stroke-4 p-8 flex items-center justify-center hover:-translate-y-2 hover:-translate-x-1 transition-transform duration-75 active:scale-95">
+<span class="font-headline text-4xl md:text-5xl font-black italic uppercase rotate-12">BOOM!</span>
+</div>
+</button>
+</div>
+<!-- Featured Layout (Bento Grid Style) -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl mx-auto mb-20">
+<div class="md:col-span-2 md:row-span-2 bg-surface-container ink-stroke-4 ink-shadow p-4 hover:rotate-1 transition-transform">
+<div class="h-64 bg-slate-800 ink-stroke-4 mb-4 overflow-hidden">
+<img alt="Comic landscape" class="w-full h-full object-cover" data-alt="dramatic comic book panel illustration of a futuristic cityscape with heavy ink lines and vibrant primary colors during a sunset" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-_7FyUHg8CYDvVkZEMsgGal1ULjr98T9UpOrIuQ5m59ES1k3xxspytE4PHlfnO9dJTYfJcMIqAZh6bVDMNbWvKgJ2TqFXD91doHOHpsL-gJ6IIW-7eyjE_urnh272vNpf2gKmxBkb8bQFhqI6FG4fGiCcAsF3jMxpeJprrsycBHgdu4f57Gci6TfP6e1QDtnrfrTb-DhPZR9jsR2RQVNF-syyqqW1ybO3zju6OnFUfagveTqtDdDmC6iWcxa00lzyXerxrFdoZV0"/>
+</div>
+<h3 class="font-headline text-2xl font-black uppercase mb-2">LAST WEEK'S TOP STRIP</h3>
+<p class="font-body text-on-surface-variant">See how the community is using the new "KRACK!" engine to build high-octane battle sequences.</p>
+</div>
+<div class="bg-tertiary-container ink-stroke-4 ink-shadow p-6 flex flex-col justify-center -rotate-1">
+<span class="material-symbols-outlined text-5xl mb-4" data-weight="fill">bolt</span>
+<h4 class="font-headline text-xl font-black uppercase">ULTRA FAST RENDER</h4>
+</div>
+<div class="bg-primary text-on-primary ink-stroke-4 ink-shadow p-6 rotate-2">
+<span class="material-symbols-outlined text-5xl mb-4">palette</span>
+<h4 class="font-headline text-xl font-black uppercase">CUSTOM INK PALETTES</h4>
+</div>
+<div class="md:col-span-2 bg-secondary-container ink-stroke-4 ink-shadow p-6 flex items-center gap-6">
+<div class="bg-white ink-stroke-4 p-2 -rotate-3">
+<img alt="Avatar" class="w-16 h-16 rounded-full object-cover ink-stroke-4" data-alt="vintage halftone illustration of a stylish character wearing sunglasses in a classic comic book art style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyd23O78kFhJQARtrphlk6dxi4hy6BXZKdwNSOOCQI9NyNWZmQO38o9bC9C9UcCss5vMeaHViKUNefvgDHxLseDuWLswWdVv-Sa0pYEGgLbRFSoraHrK4Gv9YIBoz--jCWKMnBTgQruvZ0fYJ6VtuYWyM4_UvPcnMGzQpaUv8RWviA9luhc-d7UjC5E-COiNGqCLFfcFqWNTRbn9EJlkkj0UA-r1uJYeAMbxrCvigX3G8Xta0meDal5pdNRozzCxZjTMSuLFbxggY"/>
+</div>
+<div>
+<h4 class="font-headline text-xl font-black uppercase tracking-tight">JOIN 2,000+ CREATORS</h4>
+<p class="font-body text-sm font-medium">The ink is dry and the presses are rolling. Start your series today.</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="flex flex-col md:flex-row justify-between items-center px-12 py-6 w-full bg-[#fddc00] dark:bg-yellow-600 border-t-4 border-black dark:border-slate-800">
+<div class="font-bold uppercase Epilogue text-sm text-black">
+            © 1966 LIVING INK PUBLISHING
+        </div>
+<div class="flex gap-8 font-bold uppercase Epilogue text-sm text-black/70">
+<a class="hover:italic transition-all" href="#">PRIVACY</a>
+<a class="hover:italic transition-all" href="#">LICENSE</a>
+<a class="hover:italic transition-all" href="#">CREDITS</a>
+</div>
+<div class="mt-4 md:mt-0">
+<span class="material-symbols-outlined text-black text-2xl">verified</span>
+</div>
+</footer>
+</body></html>

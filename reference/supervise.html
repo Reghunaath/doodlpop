@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>COMIC GEN - Viewer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,700;0,900;1,700;1,900&amp;family=Be+Vietnam+Pro:wght@400;500;700&amp;family=Space+Grotesk:wght@300;400;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error": "#b41340",
+                    "error-dim": "#a70138",
+                    "secondary-dim": "#5c4f00",
+                    "secondary": "#6a5b00",
+                    "secondary-container": "#fddc00",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-container": "#003e53",
+                    "on-secondary-fixed-variant": "#665800",
+                    "primary-fixed": "#ff766c",
+                    "surface-tint": "#ba0015",
+                    "outline": "#787676",
+                    "on-tertiary": "#e6f5ff",
+                    "secondary-fixed-dim": "#edce00",
+                    "on-primary-container": "#4f0004",
+                    "tertiary-dim": "#005673",
+                    "tertiary": "#006383",
+                    "on-secondary-fixed": "#463b00",
+                    "on-surface": "#2f2e2e",
+                    "secondary-fixed": "#fddc00",
+                    "on-secondary-container": "#5b4e00",
+                    "surface-container-highest": "#dfdcdc",
+                    "tertiary-fixed-dim": "#43baec",
+                    "tertiary-container": "#54c7fa",
+                    "background": "#f9f6f5",
+                    "primary-dim": "#a40011",
+                    "primary": "#ba0015",
+                    "primary-container": "#ff766c",
+                    "on-primary": "#ffefed",
+                    "on-tertiary-fixed": "#002635",
+                    "error-container": "#f74b6d",
+                    "on-background": "#2f2e2e",
+                    "surface-variant": "#dfdcdc",
+                    "on-surface-variant": "#5c5b5b",
+                    "on-primary-fixed": "#000000",
+                    "on-primary-fixed-variant": "#600006",
+                    "on-error": "#ffefef",
+                    "on-secondary": "#fff3c5",
+                    "primary-fixed-dim": "#ff5a52",
+                    "surface-container-low": "#f3f0ef",
+                    "outline-variant": "#afacac",
+                    "surface-dim": "#d6d4d3",
+                    "inverse-surface": "#0e0e0e",
+                    "surface-container": "#eae7e7",
+                    "surface-container-high": "#e5e2e1",
+                    "surface-bright": "#f9f6f5",
+                    "surface": "#f9f6f5",
+                    "inverse-primary": "#ff544c",
+                    "tertiary-fixed": "#54c7fa",
+                    "on-error-container": "#510017",
+                    "inverse-on-surface": "#9e9c9c",
+                    "on-tertiary-fixed-variant": "#00475f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Epilogue"],
+                    "body": ["Be Vietnam Pro"],
+                    "label": ["Space Grotesk"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .ben-day-dots {
+            background-image: radial-gradient(rgba(0,0,0,0.1) 1px, transparent 1px);
+            background-size: 8px 8px;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .ink-wobble {
+            border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+        }
+        .comic-burst {
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-secondary-container ben-day-dots min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="w-full border-b-4 border-black dark:border-white bg-[#f9f6f5] dark:bg-stone-900 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex justify-between items-center px-6 py-4 z-50">
+<div class="flex items-center gap-8">
+<div class="text-3xl font-black italic -rotate-2 text-[#ba0015] dark:text-red-600 tracking-tighter font-headline">COMIC GEN</div>
+<nav class="hidden md:flex gap-6">
+<a class="font-headline font-black uppercase italic text-black dark:text-stone-300 hover:scale-105 hover:-rotate-1 transition-transform" href="#">Gallery</a>
+<a class="font-headline font-black uppercase italic text-black dark:text-stone-300 hover:scale-105 hover:-rotate-1 transition-transform" href="#">Archive</a>
+<a class="font-headline font-black uppercase italic text-[#ba0015] border-b-4 border-[#ba0015] pb-1 hover:scale-105 hover:-rotate-1 transition-transform" href="#">Creator</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-[#ba0015] hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-3xl" data-icon="account_circle">account_circle</span>
+</button>
+<button class="text-[#ba0015] hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-3xl" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<aside class="hidden lg:flex flex-col w-64 p-4 space-y-6 h-screen border-r-4 border-black bg-[#fddc00] dark:bg-yellow-600 font-headline font-bold text-black">
+<div class="space-y-1">
+<div class="text-xl font-black text-black">STORYBOARD</div>
+<div class="text-xs uppercase tracking-widest opacity-80">Issue #42</div>
+</div>
+<nav class="space-y-4 flex-1">
+<div class="flex items-center gap-3 p-3 bg-white border-2 border-black rounded-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] scale-105 duration-100">
+<span class="material-symbols-outlined" data-icon="add_box">add_box</span>
+<span>New Strip</span>
+</div>
+<div class="flex items-center gap-3 p-3 opacity-80 hover:bg-[#ba0015] hover:text-white transition-colors cursor-pointer">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span>Recent</span>
+</div>
+<div class="flex items-center gap-3 p-3 opacity-80 hover:bg-[#ba0015] hover:text-white transition-colors cursor-pointer">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+<span>Favorites</span>
+</div>
+<div class="flex items-center gap-3 p-3 opacity-80 hover:bg-[#ba0015] hover:text-white transition-colors cursor-pointer">
+<span class="material-symbols-outlined" data-icon="edit_document">edit_document</span>
+<span>Drafts</span>
+</div>
+</nav>
+<button class="mt-auto bg-black text-white p-4 font-black text-center tracking-tighter hover:bg-primary-dim transition-colors">
+                UPGRADE TO PRO
+            </button>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12 flex flex-col items-center gap-12">
+<!-- Comic Strip Main Panel -->
+<section class="w-full max-w-5xl relative group">
+<!-- Caption Box -->
+<div class="absolute -top-4 -left-4 z-10 bg-secondary-container border-4 border-black px-4 py-2 font-headline font-black italic shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -rotate-3">
+                    MEANWHILE... IN THE HEART OF NEON CITY!
+                </div>
+<!-- Main Comic Page Frame -->
+<div class="bg-white border-8 border-black p-4 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] grid grid-cols-1 md:grid-cols-2 gap-4 aspect-[3/4] md:aspect-[4/3] lg:aspect-[16/10]">
+<!-- Panel 1: Establishing Shot -->
+<div class="border-4 border-black relative overflow-hidden group/panel">
+<img class="w-full h-full object-cover filter contrast-125 saturate-150" data-alt="dynamic low angle shot of a retro-futuristic city skyline with bold ink outlines and vibrant pop art colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDaXOS-OMDzDs4FZHgTEFidk6Rnn0cFp1fLk2UoXTEeh8QSJbDDjpeaXivgklHmtM3g3nQfrhyYlPy9NYkJKrdRBxieX1Kf6WPw7AuARRx-F1G-NVIvuG-cA0Q1gW6FYgv_tsFs2magLVa0CRNpoYsCpXc3UkQhYIQDet39_G8cS3rOGDL2cbC8LMCh20bwGa77kvqEGqM0D2J4utoLIgosNnb8iQRRBXscCZK73p2W5J4zUz8LnCdea80LGgmD6rDODkLfAECZ-tvy"/>
+<div class="absolute bottom-4 left-4 bg-white border-2 border-black p-2 font-headline font-bold text-xs uppercase -rotate-1">
+                            The Grid Never Sleeps.
+                        </div>
+</div>
+<!-- Panel 2: Action Close-up -->
+<div class="border-4 border-black relative overflow-hidden group/panel">
+<img class="w-full h-full object-cover filter contrast-125 saturate-150" data-alt="dramatic close up of a hero's masked face with heavy hatching shadows and intense red lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaInIku4m79ErAUXEZ-NfAmkfQpJNQEctvlEeqjKEtUcnIGAaQgItoGzp1UT_eFaxrfSba71tnI9o77Bqr7_exurj4LcRwas_Hu6rg2yKtEuqlk_ZSYZF_-1UjodLnQyx2RNDLrn20bLfhigQUNcdJxEsFm9ZIWcqrnFiS-wZfak2cu4C8uv43QRwr3TExFcYZFyfUczGxYsgeyxDIKQaK4eO5Chm1CUaKxxaKDwxMOFKSR9FxMUnOL7ogphCMpSqGfj-_Lt9oHMYG"/>
+<div class="absolute top-4 right-4 flex items-center justify-center">
+<div class="bg-primary text-white font-headline font-black p-3 text-2xl -rotate-12 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                                WHOOM!
+                            </div>
+</div>
+</div>
+<!-- Panel 3: Dynamic Wide -->
+<div class="md:col-span-2 border-4 border-black relative overflow-hidden group/panel">
+<img class="w-full h-full object-cover filter contrast-125 saturate-150" data-alt="wide panoramic shot of an explosion in a high-tech lab with glowing blue energy and debris drawn in comic book style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBP6nBTNYC10nEXTbuA_NpgMZa45ur15qZyIcDg6KSDIAymX1YxdPOqv6yhco_c6FNyUIPMu2BTajRLgXo0fBUOgIZCTtY6_kfAiNco7Pt4xojpJ3pQ_ACtoDJaCE85z5en2-iuJIwCkm5T_linoAfMzEp5JD3nMa_6kX92dM0W-fP8MMz_T4-TUGh35uNtdqjlhDysz_Fe2_gnfqHRdKhevkz-i03muu3sctgD121Uzb2wGlLRnyrNjVTnUrqLxbYsMPhvmjgJMzmc"/>
+<div class="absolute bottom-8 right-12 max-w-xs">
+<div class="bg-white border-4 border-black p-4 rounded-full font-headline font-bold text-center relative after:content-[''] after:absolute after:-bottom-4 after:right-1/4 after:w-0 after:h-0 after:border-l-[15px] after:border-l-transparent after:border-t-[20px] after:border-t-black after:border-r-[15px] after:border-r-transparent">
+                                "This ends here, Malware! Your reign of binary terror is OVER!"
+                            </div>
+</div>
+</div>
+</div>
+</section>
+<!-- Interaction Zone -->
+<section class="w-full max-w-4xl flex flex-col gap-8 mb-16">
+<!-- Feedback Speech Bubble Area -->
+<div class="relative w-full">
+<div class="absolute -top-8 left-12 bg-white border-2 border-black px-3 py-1 font-headline font-black italic text-sm uppercase">DIRECTOR'S NOTES</div>
+<div class="bg-white border-4 border-black p-6 rounded-[3rem] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative after:content-[''] after:absolute after:-bottom-6 after:left-24 after:w-0 after:h-0 after:border-l-[20px] after:border-l-transparent after:border-t-[30px] after:border-t-black after:border-r-[20px] after:border-r-transparent">
+<textarea class="w-full border-none focus:ring-0 font-body text-lg placeholder:text-stone-400 min-h-[100px] resize-none" placeholder="REWRITE THE DESTINY... (e.g., 'More lightning! Make the villain a giant robot!')"></textarea>
+</div>
+</div>
+<!-- Action Buttons Cluster -->
+<div class="flex flex-wrap justify-center items-center gap-8 pt-6">
+<!-- RE-INK! (Regenerate) -->
+<button class="group relative px-10 py-5 bg-primary text-on-primary font-headline font-black text-3xl italic uppercase tracking-tighter border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all active:scale-95">
+<span class="relative z-10">RE-INK!</span>
+<div class="absolute -inset-2 bg-primary-container opacity-0 group-hover:opacity-100 -z-10 transition-opacity comic-burst scale-150"></div>
+</button>
+<!-- THE SAGA CONTINUES... (Next) -->
+<button class="group px-8 py-5 bg-secondary-container text-black font-headline font-black text-xl italic uppercase tracking-tighter border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all active:scale-95 flex items-center gap-3">
+                        THE SAGA CONTINUES...
+                        <span class="material-symbols-outlined font-black" data-icon="chevron_right" style="font-variation-settings: 'FILL' 1;">chevron_right</span>
+</button>
+</div>
+</section>
+</main>
+</div>
+<!-- Footer -->
+<footer class="w-full py-8 mt-auto bg-black text-white border-t-8 border-double border-stone-700 flex flex-col items-center justify-center gap-4">
+<div class="text-xs tracking-widest uppercase font-label">© 1966 INKWELL PRESS. ALL RIGHTS RESERVED.</div>
+<div class="flex gap-8">
+<a class="font-label text-xs tracking-widest uppercase text-stone-400 hover:underline hover:text-[#fddc00]" href="#">Terms</a>
+<a class="font-label text-xs tracking-widest uppercase text-stone-400 hover:underline hover:text-[#fddc00]" href="#">Privacy</a>
+<a class="font-label text-xs tracking-widest uppercase text-stone-400 hover:underline hover:text-[#fddc00]" href="#">Support</a>
+</div>
+</footer>
+</body></html>

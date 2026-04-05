@@ -1,3 +1,4 @@
+import Link from "next/link";
 import PromptForm from "@/frontend/landing/PromptForm";
 import PageSlider from "@/frontend/landing/PageSlider";
 
@@ -6,7 +7,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-surface ben-day-dots">
       {/* ── NAVBAR ──────────────────────────────────────── */}
-      <nav className="flex items-center px-8 py-4 border-b-4 border-black bg-surface">
+      <nav className="flex items-center justify-between px-8 py-4 border-b-4 border-black bg-surface">
         <span
           className="font-headline text-3xl font-black italic text-primary select-none"
           style={{
@@ -17,6 +18,15 @@ export default function LandingPage() {
         >
           DOODLPOP
         </span>
+
+        <Link href="/library">
+          <div className="relative">
+            <div className="absolute inset-0 bg-on-secondary-container ink-border translate-x-1.5 translate-y-1.5" />
+            <span className="relative bg-secondary-bg ink-border px-5 py-2 font-headline text-sm font-black uppercase text-black hover:-translate-y-0.5 hover:-translate-x-0.5 transition-transform duration-75 cursor-pointer block">
+              MY LIBRARY
+            </span>
+          </div>
+        </Link>
       </nav>
 
       {/* ── HERO ────────────────────────────────────────── */}

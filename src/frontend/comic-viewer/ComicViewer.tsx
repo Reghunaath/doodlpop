@@ -227,8 +227,20 @@ export default function ComicViewer() {
         </div>
       </main>
 
-      {/* ── FIXED BOTTOM NAV ────────────────────────────── */}
+      {/* ── GO TO LIBRARY ───────────────────────────────── */}
+      <div className="flex justify-center py-10 px-4">
+        <div className="relative">
+          <div className="absolute inset-0 bg-on-secondary-container ink-border translate-x-3 translate-y-3" />
+          <Link
+            href="/library"
+            className="relative bg-secondary-bg ink-border px-12 py-5 font-headline text-2xl font-black italic uppercase text-black tracking-wide hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 block"
+          >
+            GO TO LIBRARY →
+          </Link>
+        </div>
+      </div>
 
+      {/* ── FOOTER ──────────────────────────────────────── */}
         <footer className="flex items-center justify-between px-12 py-5 bg-secondary-bg border-t-4 border-black">
         <span className="font-headline text-sm font-black uppercase text-black tracking-widest">
           © 2026 DOODLPOP

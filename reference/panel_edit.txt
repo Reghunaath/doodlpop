@@ -1,0 +1,35 @@
+1. The "Canvas-Mask" Approach (Inpainting Logic)
+This is the most seamless method for a user. Instead of the model seeing the panel in isolation, it sees the whole page but is told only to change a specific area.
+
+The Workflow: When you select a panel, the app generates a binary mask (a white box over the selected panel, black everywhere else).
+
+The Execution: You send the original full-page image + the mask + the new prompt to Nano Banana 2.
+
+The Result: The model keeps the "frozen" areas (the other panels) exactly as they are and uses its generative power only to fill the masked area with your new prompt.
+
+2. The "Crop-and-Stitch" Pipeline
+If you want to maximize the detail of the new panel, treating it as a standalone image might be better.
+
+The Workflow: Your app crops the specific coordinates of the panel you clicked.
+
+The Execution: 1.  Send that small crop to the model as a reference image with the new prompt.
+2.  The model generates a high-res version of just that panel.
+3.  Your app "pastes" that new image back into the original coordinates on the full page.
+
+The Logic: This ensures the model doesn't get "distracted" by the content of other panels while trying to fix the one you're focused on.
+
+3. Layers & Compositional UI
+Since Nano Banana 2 excels at composition, you could treat the comic page as a Z-index stack.
+
+The Workflow: Instead of one flat image, the app maintains the "Layout" (the borders/gutters) as a transparent overlay.
+
+The Execution: Each panel is rendered as an individual image object underneath that layout.
+
+The Advantage: When you want to change Panel 2, you are literally only calling the API to replace "Panel2.png." This makes the "edit conversation" feature you're planning much easier to handle, as the text bubbles could be a separate layer entirely.
+
+4. Reference-Guided Regeneration
+To ensure the "new" panel still looks like the rest of the comic (same art style, same character clothes):
+
+The Execution: When you prompt for the panel change, your backend should automatically prepend style descriptors or use the other panels as "style references."
+
+Prompting Strategy: "Regenerate this panel with [New Action], maintaining the charcoal-punk aesthetic and character design from the surrounding panels."

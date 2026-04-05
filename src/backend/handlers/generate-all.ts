@@ -57,18 +57,22 @@ export async function handleGenerateAll(id: string): Promise<NextResponse> {
   let prevPageBuffer: Buffer | null = null;
 
   for (const scriptPage of comic.script.pages) {
+    // Build reference buffers: character sheet first, then previous page
+    const refs: Buffer[] = [];
+    const hasCharacterSheet = !!characterSheetBuffer;
+    const hasPreviousPage = !!prevPageBuffer;
+    if (characterSheetBuffer) refs.push(characterSheetBuffer);
+    if (prevPageBuffer) refs.push(prevPageBuffer);
+
     const prompt = generatePageImagePrompt(
       scriptPage,
       comic.artStyle,
       comic.script.title,
       comic.pageCount,
-      comic.customStylePrompt
+      comic.customStylePrompt,
+      hasCharacterSheet,
+      hasPreviousPage
     );
-
-    // Build reference buffers: character sheet first, then previous page
-    const refs: Buffer[] = [];
-    if (characterSheetBuffer) refs.push(characterSheetBuffer);
-    if (prevPageBuffer) refs.push(prevPageBuffer);
 
     const imageBuffer = await generatePageImage(prompt, refs);
     prevPageBuffer = imageBuffer;

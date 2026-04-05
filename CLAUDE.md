@@ -2,7 +2,7 @@
 
 ## 1. Tech Stack
 
-- **Framework:** Next.js 15 (App Router). Single repo for frontend and backend.
+- **Framework:** Next.js 15 (App Router). Single repo for frontend and backend
 - **Language:** TypeScript. Strict mode enabled.
 - **Frontend:** React 19, Tailwind CSS 4. shadcn/ui is acceptable if needed.
 - **Text AI:** Google Gemini (`gemini-2.5-flash`) via `@google/genai` SDK. Used for script generation, follow-up questions, and random idea generation.

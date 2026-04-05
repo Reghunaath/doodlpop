@@ -60,15 +60,43 @@ export async function handleRegeneratePage(
     );
   }
 
+  // Build reference buffers for consistency
+  const refs: Buffer[] = [];
+  let hasCharacterSheet = false;
+  if (comic.characterSheetUrl) {
+    try {
+      const sheetBuffer = await storage.getImageBuffer(comic.characterSheetUrl);
+      refs.push(sheetBuffer);
+      hasCharacterSheet = true;
+    } catch {
+      // Non-fatal
+    }
+  }
+  let hasPreviousPage = false;
+  const prevPage = comic.pages.find((p) => p.pageNumber === pageNumber - 1);
+  if (prevPage) {
+    try {
+      const prevBuffer = await storage.getImageBuffer(
+        prevPage.versions[prevPage.selectedVersionIndex].imageUrl
+      );
+      refs.push(prevBuffer);
+      hasPreviousPage = true;
+    } catch {
+      // Non-fatal
+    }
+  }
+
   const prompt = generatePageImagePrompt(
     scriptPage,
     comic.artStyle,
     comic.script.title,
     comic.pageCount,
-    comic.customStylePrompt
+    comic.customStylePrompt,
+    hasCharacterSheet,
+    hasPreviousPage
   );
 
-  const imageBuffer = await generatePageImage(prompt);
+  const imageBuffer = await generatePageImage(prompt, refs);
   const versionIndex = page.versions.length;
   const imageUrl = await storage.uploadImage(id, pageNumber, versionIndex, imageBuffer);
 

@@ -67,7 +67,7 @@ Rules:
 - Dialogue should be natural and fit the genre.
 - Captions are optional narrator text.
 - The story must have a clear beginning, middle, and end.
-- Include a "characters" array listing every named character in the story with detailed, consistent visual descriptions. These descriptions will be used as reference for image generation, so be very specific about visual details.
+- Include a "characters" array listing every named character in the story. Each character MUST have a HIGHLY DETAILED, exhaustive visual description covering: exact age, ethnicity, skin color/tone, height, body build, face shape, hair color/style/length, eye color/shape, nose shape, lip shape, any scars/freckles/birthmarks/tattoos, and any other distinguishing physical features. Be as specific and detailed as possible — write at least 3-4 sentences per character for the appearance field. These descriptions will be used as the sole reference for image generation — if a detail is omitted, the AI will guess inconsistently.
 - Respond with ONLY valid JSON matching this exact structure, no other text:
 
 {
@@ -76,7 +76,7 @@ Rules:
   "characters": [
     {
       "name": "Character Name",
-      "appearance": "Detailed physical description: age, height, build, hair color and style, eye color, skin tone, distinguishing features",
+      "appearance": "Exact age, ethnicity, skin color/tone, height, body build, face shape, hair color/style/length, eye color/shape, nose shape, lip shape, scars/freckles/birthmarks/tattoos, and any other distinguishing features",
       "clothing": "Default outfit: specific garments, colors, accessories",
       "personality": "2-3 key personality traits that affect expressions and body language"
     }

@@ -134,9 +134,20 @@ export default function ComicViewer({ comicId }: ComicViewerProps) {
   const next = () => setPageIdx((i) => Math.min(sortedPages.length - 1, i + 1));
 
   const handleShareQr = async () => {
+    // Check localStorage cache first
+    const cacheKey = `doodlpop_share_${comicId}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const dataUrl = await QRCode.toDataURL(cached, { width: 256, margin: 2 });
+      setShareUrl(cached);
+      setQrDataUrl(dataUrl);
+      return;
+    }
+
     setIsGeneratingQr(true);
     try {
       const { url } = await sharePdf(comicId);
+      localStorage.setItem(cacheKey, url);
       const dataUrl = await QRCode.toDataURL(url, { width: 256, margin: 2 });
       setShareUrl(url);
       setQrDataUrl(dataUrl);

@@ -342,10 +342,23 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
               </div>
             ) : (
               <>
-                {/* Error banner */}
+                {/* Error banner with retry */}
                 {error && (
-                  <div className="bg-primary ink-border px-6 py-2" style={{ transform: "rotate(-1deg)" }}>
-                    <p className="font-headline text-sm font-black text-white uppercase">{error}</p>
+                  <div className="flex flex-col items-center gap-6">
+                    <div className="bg-primary ink-border px-6 py-2" style={{ transform: "rotate(-1deg)" }}>
+                      <p className="font-headline text-sm font-black text-white uppercase">{error}</p>
+                    </div>
+                    {!currentPage && !isGeneratingPage && (
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-primary-dim ink-border translate-x-2 translate-y-2" />
+                        <button
+                          onClick={handleGeneratePage}
+                          className="relative bg-primary text-white ink-border px-10 py-5 font-headline text-2xl font-black italic uppercase tracking-tight hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 cursor-pointer"
+                        >
+                          TRY AGAIN!
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 

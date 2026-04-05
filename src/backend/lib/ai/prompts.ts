@@ -268,26 +268,17 @@ ${dialogueLines}${caption ? "\n" + caption : ""}
       : "";
 
   // Build character description block for textual reinforcement
+  // Include all characters on every page — token cost is minimal and avoids
+  // name-matching issues (nicknames, partial names, pronouns).
   let characterBlock = "";
   if (characters && characters.length > 0) {
-    const pageText = scriptPage.panels
-      .map((p) => [p.description, ...p.dialogue.map((d) => d.speaker)].join(" "))
-      .join(" ")
-      .toLowerCase();
-
-    const relevantChars = characters.filter((c) =>
-      pageText.includes(c.name.toLowerCase())
-    );
-
-    if (relevantChars.length > 0) {
-      characterBlock = `\nCHARACTER APPEARANCE REFERENCE (maintain these designs exactly):\n${relevantChars
-        .map((c) => {
-          const parts = [`- ${c.name}: ${c.appearance}`];
-          if (c.clothing) parts.push(`  Outfit: ${c.clothing}`);
-          return parts.join("\n");
-        })
-        .join("\n")}\n`;
-    }
+    characterBlock = `\nCHARACTER APPEARANCE REFERENCE (maintain these designs exactly):\n${characters
+      .map((c) => {
+        const parts = [`- ${c.name}: ${c.appearance}`];
+        if (c.clothing) parts.push(`  Outfit: ${c.clothing}`);
+        return parts.join("\n");
+      })
+      .join("\n")}\n`;
   }
 
   return `WORK SURFACE:
@@ -331,7 +322,8 @@ export function panelEditImagePrompt(
   totalPages: number,
   editingPanelNumber: number,
   newDescription: string,
-  customStylePrompt?: string
+  customStylePrompt?: string,
+  characters?: CharacterDescription[]
 ): string {
   // Build a modified script page with only the edited panel's description overridden
   const modifiedPage: ScriptPage = {
@@ -356,7 +348,8 @@ export function panelEditImagePrompt(
     totalPages,
     customStylePrompt,
     true,  // hasCharacterSheet → ref[0] described as character sheet
-    false  // hasPreviousPage → we handle ref[1] below
+    false, // hasPreviousPage → we handle ref[1] below
+    characters
   );
 
   const revisionHeader = `PANEL REVISION MODE — targeted single-panel edit:

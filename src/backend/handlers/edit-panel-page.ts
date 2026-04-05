@@ -98,7 +98,8 @@ export async function handleEditPanel(
     comic.pageCount,
     panelNumber,
     newDescription.trim(),
-    comic.customStylePrompt
+    comic.customStylePrompt,
+    comic.script.characters
   );
 
   const imageBuffer = await generatePageImage(prompt, refs);

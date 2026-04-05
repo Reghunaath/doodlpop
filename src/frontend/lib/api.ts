@@ -14,6 +14,7 @@ import type {
   SelectPageVersionRequest,
   GenerateAllResponse,
   RandomIdeaResponse,
+  BatchComicsResponse,
   Comic,
   ErrorResponse,
 } from "@/backend/lib/types";
@@ -141,6 +142,14 @@ export function editPanel(
 export function generateAll(id: string): Promise<GenerateAllResponse> {
   return apiFetch(`/api/comic/${id}/generate-all`, {
     method: "POST",
+  });
+}
+
+// POST /api/comic/batch
+export function batchComics(ids: string[]): Promise<BatchComicsResponse> {
+  return apiFetch("/api/comic/batch", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
   });
 }
 

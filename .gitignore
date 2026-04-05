@@ -48,5 +48,11 @@ next-env.d.ts
 # Local generated PDFs (dev only)
 generated-pdfs/
 
+# Local generated images (dev only)
+generated/
+
+# Nano Banana request logs
+nano-banana-requests.log
+
 # Reference images
 references/

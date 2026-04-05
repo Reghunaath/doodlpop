@@ -50,10 +50,26 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
         setCurrentPageNumber(nextPage);
 
         // If there's already a generated page at this position, show it
+        // Otherwise, start generating automatically
         const existingPage = c.pages.find((p) => p.pageNumber === nextPage);
         if (existingPage) {
           setCurrentPage(existingPage);
           setSelectedVersion(existingPage.selectedVersionIndex);
+        } else {
+          setIsGeneratingPage(true);
+          try {
+            const res = await generatePage(comicId, { pageNumber: nextPage });
+            if (!cancelled) {
+              setCurrentPage(res.page);
+              setSelectedVersion(res.page.selectedVersionIndex);
+            }
+          } catch (err) {
+            if (!cancelled) {
+              setError(err instanceof Error ? err.message : "Failed to generate page");
+            }
+          } finally {
+            if (!cancelled) setIsGeneratingPage(false);
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -112,11 +128,24 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
         setIsComplete(true);
         updateSavedComic(comicId, { status: "complete" });
       } else {
+        // Advance to next page and auto-generate
         const nextPageNum = currentPageNumber + 1;
         setCurrentPageNumber(nextPageNum);
         setCurrentPage(null);
         setSelectedVersion(0);
         setNotes("");
+        setIsApproving(false);
+        setIsGeneratingPage(true);
+        try {
+          const res = await generatePage(comicId, { pageNumber: nextPageNum });
+          setCurrentPage(res.page);
+          setSelectedVersion(res.page.selectedVersionIndex);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Failed to generate page");
+        } finally {
+          setIsGeneratingPage(false);
+        }
+        return; // Skip the finally below since we already cleared isApproving
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to approve page");
@@ -328,21 +357,6 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
                     </span>
                   </div>
                 </div>
-
-                {/* Generate button (if page not yet generated) */}
-                {!currentPage && !isGeneratingPage && (
-                  <div className="flex justify-center py-12">
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-primary-dim ink-border translate-x-3 translate-y-3" />
-                      <button
-                        onClick={handleGeneratePage}
-                        className="relative bg-primary ink-border px-14 py-6 font-headline text-3xl font-black italic uppercase text-white tracking-wide hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 cursor-pointer"
-                      >
-                        GENERATE PAGE {currentPageNumber}
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {/* Generating overlay */}
                 {isGeneratingPage && (

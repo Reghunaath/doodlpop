@@ -2,8 +2,8 @@
 
 import { NextResponse } from "next/server";
 import { getStorage } from "../lib/storage";
-import { generatePageImagePrompt } from "../lib/ai/prompts";
-import { generatePageImage } from "../lib/ai/image-generator";
+import { generatePageImagePrompt, characterSheetPrompt } from "../lib/ai/prompts";
+import { generatePageImage, generateCharacterSheet } from "../lib/ai/image-generator";
 import { GeneratePageRequest, Page, PageVersion } from "../lib/types";
 
 export async function handleGeneratePage(
@@ -56,24 +56,39 @@ export async function handleGeneratePage(
     );
   }
 
-  const prompt = generatePageImagePrompt(
-    scriptPage,
-    comic.artStyle,
-    comic.script.title,
-    comic.pageCount,
-    comic.customStylePrompt
-  );
+  // Generate character sheet on first page if not already created
+  if (!comic.characterSheetUrl) {
+    try {
+      const sheetPrompt = characterSheetPrompt(
+        comic.script,
+        comic.artStyle,
+        comic.customStylePrompt
+      );
+      const sheetBuffer = await generateCharacterSheet(sheetPrompt);
+      const sheetUrl = await storage.uploadCharacterSheet(id, sheetBuffer);
+      comic.characterSheetUrl = sheetUrl;
+      comic.updatedAt = new Date().toISOString();
+      await storage.saveComic(comic);
+      console.log(`[generate-page] Character sheet generated for comic ${id}`);
+    } catch (err) {
+      // Non-fatal — proceed without character sheet
+      console.warn(`[generate-page] Character sheet generation failed: ${err}`);
+    }
+  }
 
   // Build reference buffers: character sheet + previous page (if any)
   const refs: Buffer[] = [];
+  let hasCharacterSheet = false;
   if (comic.characterSheetUrl) {
     try {
       const sheetBuffer = await storage.getImageBuffer(comic.characterSheetUrl);
       refs.push(sheetBuffer);
+      hasCharacterSheet = true;
     } catch {
       // Non-fatal
     }
   }
+  let hasPreviousPage = false;
   const prevPage = comic.pages.find((p) => p.pageNumber === pageNumber - 1);
   if (prevPage) {
     try {
@@ -81,10 +96,21 @@ export async function handleGeneratePage(
         prevPage.versions[prevPage.selectedVersionIndex].imageUrl
       );
       refs.push(prevBuffer);
+      hasPreviousPage = true;
     } catch {
       // Non-fatal
     }
   }
+
+  const prompt = generatePageImagePrompt(
+    scriptPage,
+    comic.artStyle,
+    comic.script.title,
+    comic.pageCount,
+    comic.customStylePrompt,
+    hasCharacterSheet,
+    hasPreviousPage
+  );
 
   const imageBuffer = await generatePageImage(prompt, refs);
   const versionIndex = 0;

@@ -160,7 +160,9 @@ export function generatePageImagePrompt(
   artStyle: ArtStylePreset,
   comicTitle: string,
   totalPages: number,
-  customStylePrompt?: string
+  customStylePrompt?: string,
+  hasCharacterSheet?: boolean,
+  hasPreviousPage?: boolean
 ): string {
   const artStyleDescription = getArtStyleDescription(artStyle, customStylePrompt);
   const panelCount = scriptPage.panels.length;
@@ -182,10 +184,27 @@ ${dialogueLines}${caption ? "\n" + caption : ""}`;
     })
     .join("\n\n");
 
+  // Build reference image instructions
+  const refInstructions: string[] = [];
+  if (hasCharacterSheet) {
+    refInstructions.push(
+      "- The FIRST attached reference image is a CHARACTER REFERENCE SHEET. You MUST use it to keep every character's design (face, body, outfit, colors, proportions) exactly consistent. Do NOT deviate from the character designs shown in the sheet."
+    );
+  }
+  if (hasPreviousPage) {
+    refInstructions.push(
+      `- The ${hasCharacterSheet ? "SECOND" : "FIRST"} attached reference image is the PREVIOUS comic page. Match the art style, color palette, character appearances, and visual tone from that page to ensure visual continuity across the comic.`
+    );
+  }
+  const refBlock =
+    refInstructions.length > 0
+      ? `\nReference images provided:\n${refInstructions.join("\n")}\n`
+      : "";
+
   return `Create a single comic book page illustration in ${artStyleDescription} style.
 
 This is page ${scriptPage.pageNumber} of ${totalPages} in a comic called "${comicTitle}".
-
+${refBlock}
 The page has ${panelCount} panels arranged in a comic book layout:
 
 ${panelDescriptions}
@@ -194,7 +213,7 @@ Important instructions:
 - Render this as a SINGLE comic book page with clearly defined panel borders.
 - Include speech bubbles with the dialogue text inside each panel.
 - Include caption boxes for narrator text where specified.
-- Maintain consistent character appearances across all panels.
+- Keep character appearances EXACTLY consistent across all panels and with any provided reference images.
 - The overall style must be: ${artStyleDescription}
 - Use a ${IMAGE_ASPECT_RATIO} aspect ratio.`;
 }

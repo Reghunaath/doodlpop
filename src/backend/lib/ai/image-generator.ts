@@ -1,8 +1,29 @@
 // src/backend/lib/ai/image-generator.ts
 // Server-side only. Never import in client components.
 
+import fs from "fs";
+import path from "path";
 import { ai } from "./gemini-client";
 import { GEMINI_IMAGE_MODEL, IMAGE_ASPECT_RATIO, IMAGE_RESOLUTION } from "../constants";
+
+const LOG_FILE = path.join(process.cwd(), "nano-banana-requests.log");
+
+function logRequest(prompt: string, refCount: number, success: boolean, durationMs: number, error?: string): void {
+  const entry = [
+    `[${new Date().toISOString()}]`,
+    `refs=${refCount}`,
+    `success=${success}`,
+    `duration=${durationMs}ms`,
+    error ? `error=${error}` : "",
+    `\n--- PROMPT ---\n${prompt}\n--- END ---\n`,
+  ].filter(Boolean).join(" ");
+
+  try {
+    fs.appendFileSync(LOG_FILE, entry + "\n");
+  } catch {
+    console.warn("[image-generator] Failed to write to log file");
+  }
+}
 
 function detectMimeType(buf: Buffer): string {
   // JPEG: FF D8
@@ -29,21 +50,32 @@ export async function generatePageImage(
     { text: prompt },
   ];
 
-  const response = await ai.models.generateContent({
-    model: GEMINI_IMAGE_MODEL,
-    contents: [{ role: "user", parts }],
-    config: {
-      responseModalities: ["IMAGE"],
-      imageConfig: {
-        aspectRatio: IMAGE_ASPECT_RATIO,
-        imageSize: IMAGE_RESOLUTION,
+  const start = Date.now();
+  let response;
+  try {
+    response = await ai.models.generateContent({
+      model: GEMINI_IMAGE_MODEL,
+      contents: [{ role: "user", parts }],
+      config: {
+        responseModalities: ["IMAGE"],
+        imageConfig: {
+          aspectRatio: IMAGE_ASPECT_RATIO,
+          imageSize: IMAGE_RESOLUTION,
+        },
       },
-    },
-  });
+    });
+  } catch (err) {
+    const duration = Date.now() - start;
+    logRequest(prompt, referenceBuffers.length, false, duration, String(err));
+    throw err;
+  }
+
+  const duration = Date.now() - start;
 
   const responseParts = response.candidates?.[0]?.content?.parts ?? [];
   for (const part of responseParts) {
     if ((part as { inlineData?: { data?: string } }).inlineData?.data) {
+      logRequest(prompt, referenceBuffers.length, true, duration);
       return Buffer.from(
         (part as { inlineData: { data: string } }).inlineData.data,
         "base64"
@@ -51,6 +83,7 @@ export async function generatePageImage(
     }
   }
 
+  logRequest(prompt, referenceBuffers.length, false, duration, "No image in response");
   throw new Error("No image returned from image generation model");
 }
 

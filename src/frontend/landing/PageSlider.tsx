@@ -29,7 +29,7 @@ interface PageSliderProps {
 
 export default function PageSlider({ pages, onPagesChange }: PageSliderProps) {
   return (
-    <section className="px-4 pb-20">
+    <section className="w-full px-4 pb-20">
       <div className="max-w-5xl mx-auto">
 
         {/* Section header */}

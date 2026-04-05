@@ -3,6 +3,8 @@
 //   "memory"  — in-memory Map (local dev, next dev persistent process)
 //   "vercel"  — Vercel KV + Blob (production)
 
+import fs from "fs";
+import path from "path";
 import { Comic } from "./types";
 
 export interface StorageAdapter {
@@ -51,6 +53,16 @@ const memoryAdapter: StorageAdapter = {
   async uploadImage(comicId, pageNumber, versionIndex, imageBuffer) {
     const key = `comics/${comicId}/page-${pageNumber}-v${versionIndex}.png`;
     imagesMap.set(key, imageBuffer);
+
+    // Save to disk for local inspection
+    try {
+      const dir = path.join(process.cwd(), "generated", comicId);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, `page-${pageNumber}-v${versionIndex}.png`), imageBuffer);
+    } catch {
+      // Non-fatal
+    }
+
     const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
     return `${base}/api/comic/${comicId}/image/${pageNumber}/${versionIndex}`;
   },
@@ -58,6 +70,16 @@ const memoryAdapter: StorageAdapter = {
   async uploadCharacterSheet(comicId, imageBuffer) {
     const key = `comics/${comicId}/character-sheet.png`;
     imagesMap.set(key, imageBuffer);
+
+    // Save to disk for local inspection
+    try {
+      const dir = path.join(process.cwd(), "generated", comicId);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, "character-sheet.png"), imageBuffer);
+    } catch {
+      // Non-fatal
+    }
+
     const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
     return `${base}/api/comic/${comicId}/character-sheet`;
   },

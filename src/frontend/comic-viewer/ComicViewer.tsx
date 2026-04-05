@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import type { Comic } from "@/backend/lib/types";
-import { getComic, generateAll, ApiError } from "@/frontend/lib/api";
+import { getComic, generateAll, sharePdf, ApiError } from "@/frontend/lib/api";
+import QRCode from "qrcode";
 import { updateSavedComic } from "@/frontend/lib/local-storage";
 
 interface ComicViewerProps {
@@ -15,6 +16,9 @@ export default function ComicViewer({ comicId }: ComicViewerProps) {
   const [pageIdx, setPageIdx] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const generationTriggered = useRef(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -129,6 +133,31 @@ export default function ComicViewer({ comicId }: ComicViewerProps) {
   const prev = () => setPageIdx((i) => Math.max(0, i - 1));
   const next = () => setPageIdx((i) => Math.min(sortedPages.length - 1, i + 1));
 
+  const handleShareQr = async () => {
+    // Check localStorage cache first
+    const cacheKey = `doodlpop_share_${comicId}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const dataUrl = await QRCode.toDataURL(cached, { width: 256, margin: 2 });
+      setShareUrl(cached);
+      setQrDataUrl(dataUrl);
+      return;
+    }
+
+    setIsGeneratingQr(true);
+    try {
+      const { url } = await sharePdf(comicId);
+      localStorage.setItem(cacheKey, url);
+      const dataUrl = await QRCode.toDataURL(url, { width: 256, margin: 2 });
+      setShareUrl(url);
+      setQrDataUrl(dataUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate share link");
+    } finally {
+      setIsGeneratingQr(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-surface">
       {/* ── FIXED TOP NAV ───────────────────────────────── */}
@@ -158,6 +187,12 @@ export default function ComicViewer({ comicId }: ComicViewerProps) {
             className="font-headline font-black uppercase italic text-on-surface-muted hover:text-primary hover:-rotate-1 transition-all text-sm"
           >
             Create
+          </Link>
+          <Link
+            href="/library"
+            className="font-headline font-black uppercase italic text-on-surface-muted hover:text-primary hover:-rotate-1 transition-all text-sm"
+          >
+            Library
           </Link>
         </div>
 
@@ -288,7 +323,52 @@ export default function ComicViewer({ comicId }: ComicViewerProps) {
               >
                 DOWNLOAD PDF
               </a>
+              <button
+                onClick={handleShareQr}
+                disabled={isGeneratingQr}
+                className="bg-primary ink-border px-8 py-4 font-headline font-black text-lg italic uppercase text-white tracking-tight ink-shadow hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                style={{ transform: "rotate(1deg)" }}
+              >
+                {isGeneratingQr ? "GENERATING..." : "SHARE QR"}
+              </button>
             </div>
+
+            {/* QR Modal */}
+            {qrDataUrl && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setQrDataUrl(null)}>
+                <div className="bg-surface ink-border ink-shadow p-8 max-w-sm w-full mx-4 text-center" onClick={(e) => e.stopPropagation()}>
+                  <h3
+                    className="font-headline text-2xl font-black italic uppercase mb-6"
+                    style={{ filter: "drop-shadow(3px 3px 0px rgba(186,0,21,1))" }}
+                  >
+                    SCAN TO DOWNLOAD
+                  </h3>
+                  <div className="bg-white ink-border p-4 inline-block mb-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={qrDataUrl} alt="QR Code" className="w-48 h-48" />
+                  </div>
+                  {shareUrl && (
+                    <div className="mb-6">
+                      <p className="font-body text-xs text-on-surface-muted break-all bg-surface-card ink-border p-2">
+                        {shareUrl}
+                      </p>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(shareUrl)}
+                        className="mt-2 font-headline text-xs font-black uppercase text-primary hover:underline cursor-pointer"
+                      >
+                        COPY LINK
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => setQrDataUrl(null)}
+                    className="bg-primary ink-border px-6 py-2 font-headline font-black text-sm uppercase text-white hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  >
+                    CLOSE
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           /* ── Empty / unknown state ─────────────── */

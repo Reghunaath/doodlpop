@@ -9,6 +9,7 @@ import {
   generatePage,
   regeneratePage,
   selectPageVersion,
+  editPanel,
 } from "@/frontend/lib/api";
 import { updateSavedComic } from "@/frontend/lib/local-storage";
 
@@ -28,6 +29,12 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
   const [isApproving, setIsApproving] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Panel edit mode
+  const [isPanelEditMode, setIsPanelEditMode] = useState(false);
+  const [selectedPanelNumber, setSelectedPanelNumber] = useState<number | null>(null);
+  const [panelEditDescription, setPanelEditDescription] = useState("");
+  const [isSubmittingPanelEdit, setIsSubmittingPanelEdit] = useState(false);
 
   // Fetch comic on mount
   useEffect(() => {
@@ -134,6 +141,7 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
         setCurrentPage(null);
         setSelectedVersion(0);
         setNotes("");
+        exitPanelEditMode();
         setIsApproving(false);
         setIsGeneratingPage(true);
         try {
@@ -154,6 +162,46 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
     }
   };
 
+  const handleApplyPanelEdit = async () => {
+    if (!selectedPanelNumber || !panelEditDescription.trim()) return;
+    setIsSubmittingPanelEdit(true);
+    setError(null);
+    try {
+      const res = await editPanel(comicId, {
+        pageNumber: currentPageNumber,
+        panelNumber: selectedPanelNumber,
+        newDescription: panelEditDescription.trim(),
+      });
+      setCurrentPage(res.page);
+      setSelectedVersion(res.page.selectedVersionIndex);
+      setIsPanelEditMode(false);
+      setSelectedPanelNumber(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to edit panel");
+    } finally {
+      setIsSubmittingPanelEdit(false);
+    }
+  };
+
+  const exitPanelEditMode = () => {
+    setIsPanelEditMode(false);
+    setSelectedPanelNumber(null);
+    setPanelEditDescription("");
+  };
+
+  // Panel grid rows matching the layout used during generation
+  function getPanelRows(count: number): number[][] {
+    switch (count) {
+      case 1: return [[1]];
+      case 2: return [[1], [2]];
+      case 3: return [[1, 2], [3]];
+      case 4: return [[1, 2], [3, 4]];
+      case 5: return [[1, 2], [3], [4, 5]];
+      case 6: return [[1, 2], [3, 4], [5, 6]];
+      default: return Array.from({ length: count }, (_, i) => [i + 1]);
+    }
+  }
+
   const currentImageUrl = currentPage
     ? currentPage.versions[selectedVersion]?.imageUrl
     : null;
@@ -161,28 +209,26 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
   const versionsCount = currentPage?.versions.length ?? 0;
   const canRegenerate = versionsCount < 4;
 
+  // Script panels for the current page (used for panel edit pre-fill)
+  const scriptPanels =
+    comic?.script?.pages.find((p) => p.pageNumber === currentPageNumber)?.panels ?? [];
+
   const bubbleText = isComplete
     ? "MAGNIFICENT! YOUR MASTERPIECE IS COMPLETE! THE SAGA IS WRITTEN IN INK FOREVER!"
-    : isGeneratingPage || isRegenerating
+    : isGeneratingPage || isRegenerating || isSubmittingPanelEdit
     ? "HOLD ON, TRUE BELIEVER! WE'RE INKING A BRAND NEW VERSION RIGHT NOW..."
+    : isPanelEditMode
+    ? selectedPanelNumber
+      ? `PANEL ${selectedPanelNumber} SELECTED! REWRITE ITS DESTINY BELOW, THEN HIT APPLY!`
+      : "CLICK A PANEL TO SELECT IT — THEN REWRITE ITS DESTINY!"
     : !currentPage
     ? "READY TO BRING THIS PAGE TO LIFE? HIT THAT GENERATE BUTTON!"
     : "REVIEW THIS PAGE! LOVE IT? HIT THE SAGA CONTINUES! NOT HAPPY? GIVE NOTES AND RE-INK!";
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-surface ben-day-dots">
-        <div className="bg-secondary-bg ink-border ink-shadow px-12 py-8 animate-pulse">
-          <span className="font-headline text-3xl font-black uppercase">LOADING...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-surface ben-day-dots">
       {/* ── NAV ─────────────────────────────────────────── */}
-      <nav className="flex items-center px-8 py-4 border-b-4 border-black bg-surface">
+      <nav className="flex items-center justify-between px-8 py-4 border-b-4 border-black bg-surface">
         <Link href="/">
           <span
             className="font-headline text-3xl font-black italic text-primary select-none cursor-pointer"
@@ -194,6 +240,15 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
           >
             DOODLPOP
           </span>
+        </Link>
+
+        <Link href="/library">
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary-dim ink-border translate-x-1.5 translate-y-1.5" />
+            <span className="relative bg-primary ink-border px-5 py-2 font-headline text-sm font-black uppercase text-white hover:-translate-y-0.5 hover:-translate-x-0.5 transition-transform duration-75 cursor-pointer block">
+              VIEW LIBRARY
+            </span>
+          </div>
         </Link>
       </nav>
 
@@ -277,7 +332,7 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
 
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
                 const generated = comic?.pages.find((p) => p.pageNumber === pageNum);
-                const isApproved = isComplete || (generated && pageNum < currentPageNumber);
+                const isApproved = isComplete || pageNum < currentPageNumber;
                 const isCurrent = pageNum === currentPageNumber && !isComplete;
                 return (
                   <div
@@ -372,7 +427,7 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
                 </div>
 
                 {/* Generating overlay */}
-                {isGeneratingPage && (
+                {(isLoading || isGeneratingPage) && (
                   <div className="flex flex-col items-center justify-center gap-6 py-16">
                     <div className="bg-secondary-bg ink-border ink-shadow px-12 py-8 animate-pulse" style={{ transform: "rotate(-1deg)" }}>
                       <span className="font-headline text-3xl font-black uppercase">
@@ -398,17 +453,50 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
                             alt={`Comic page ${currentPageNumber}`}
                             className="w-full h-full object-cover"
                           />
+
+                          {/* Panel selection overlay */}
+                          {isPanelEditMode && (
+                            <div className="absolute inset-0 z-10 flex flex-col">
+                              {getPanelRows(scriptPanels.length).map((row, rowIdx) => (
+                                <div key={rowIdx} className="flex flex-1">
+                                  {row.map((panelNum) => (
+                                    <button
+                                      key={panelNum}
+                                      onClick={() => {
+                                        const p = scriptPanels.find((sp) => sp.panelNumber === panelNum);
+                                        setSelectedPanelNumber(panelNum);
+                                        setPanelEditDescription(p?.description ?? "");
+                                      }}
+                                      className={`flex-1 flex items-center justify-center transition-all cursor-pointer border-4 ${
+                                        selectedPanelNumber === panelNum
+                                          ? "bg-primary/40 border-primary"
+                                          : "bg-black/10 border-transparent hover:bg-white/25 hover:border-white/70"
+                                      }`}
+                                    >
+                                      {selectedPanelNumber === panelNum && (
+                                        <div className="bg-primary ink-border px-3 py-1">
+                                          <span className="font-headline text-white font-black text-lg uppercase">
+                                            PANEL {panelNum}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </button>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
 
                       {/* Regenerating overlay */}
-                      {isRegenerating && (
+                      {(isRegenerating || isSubmittingPanelEdit) && (
                         <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20">
                           <div
                             className="bg-primary ink-border px-10 py-5 text-white font-headline text-3xl font-black italic animate-pulse"
                             style={{ transform: "rotate(-2deg)" }}
                           >
-                            RE-INKING...
+                            {isSubmittingPanelEdit ? `RE-INKING PANEL ${selectedPanelNumber}...` : "RE-INKING..."}
                           </div>
                         </div>
                       )}
@@ -439,22 +527,43 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
                       </div>
                     )}
 
-                    {/* Director's Notes */}
-                    <div className="relative pt-3">
-                      <div className="absolute -top-3 left-6 bg-surface-white ink-border px-3 py-1 font-headline text-xs font-black uppercase z-10">
-                        DIRECTOR&apos;S NOTES
+                    {/* Director's Notes — hidden while in panel edit mode */}
+                    {!isPanelEditMode && (
+                      <div className="relative pt-3">
+                        <div className="absolute -top-3 left-6 bg-surface-white ink-border px-3 py-1 font-headline text-xs font-black uppercase z-10">
+                          DIRECTOR&apos;S NOTES
+                        </div>
+                        <div className="bg-surface-white ink-border ink-shadow p-6">
+                          <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            disabled={isRegenerating}
+                            rows={3}
+                            placeholder="REWRITE THE DESTINY... (e.g. 'More lightning! Make the villain a giant robot!')"
+                            className="w-full bg-surface-low ink-border px-4 py-3 font-body text-base outline-none focus:border-primary transition-colors resize-none placeholder:text-on-surface-muted/60 placeholder:italic disabled:opacity-40"
+                          />
+                        </div>
                       </div>
-                      <div className="bg-surface-white ink-border ink-shadow p-6">
-                        <textarea
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          disabled={isRegenerating}
-                          rows={3}
-                          placeholder="REWRITE THE DESTINY... (e.g. 'More lightning! Make the villain a giant robot!')"
-                          className="w-full bg-surface-low ink-border px-4 py-3 font-body text-base outline-none focus:border-primary transition-colors resize-none placeholder:text-on-surface-muted/60 placeholder:italic disabled:opacity-40"
-                        />
+                    )}
+
+                    {/* Panel edit description + apply */}
+                    {isPanelEditMode && selectedPanelNumber && (
+                      <div className="relative pt-3">
+                        <div className="absolute -top-3 left-6 bg-primary ink-border px-3 py-1 font-headline text-xs font-black uppercase text-white z-10">
+                          PANEL {selectedPanelNumber} — NEW DESCRIPTION
+                        </div>
+                        <div className="bg-surface-white ink-border ink-shadow p-6">
+                          <textarea
+                            value={panelEditDescription}
+                            onChange={(e) => setPanelEditDescription(e.target.value)}
+                            disabled={isSubmittingPanelEdit}
+                            rows={4}
+                            placeholder="Describe what should happen in this panel..."
+                            className="w-full bg-surface-low ink-border px-4 py-3 font-body text-base outline-none focus:border-primary transition-colors resize-none placeholder:text-on-surface-muted/60 placeholder:italic disabled:opacity-40"
+                          />
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Regeneration count */}
                     {versionsCount > 1 && (
@@ -464,32 +573,74 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
                     )}
 
                     {/* Action buttons */}
-                    <div className="flex flex-wrap justify-center items-center gap-8 pt-2">
-                      {/* RE-INK! */}
-                      <div className="relative">
-                        <div className={`absolute inset-0 bg-primary-dim ink-border translate-x-2 translate-y-2 transition-opacity ${!canRegenerate || isRegenerating ? "opacity-30" : ""}`} />
-                        <button
-                          onClick={handleReink}
-                          disabled={!canRegenerate || isRegenerating}
-                          className="relative bg-primary text-white ink-border px-10 py-5 font-headline text-3xl font-black italic uppercase tracking-tight hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 cursor-pointer"
-                        >
-                          RE-INK!
-                        </button>
-                      </div>
+                    {!isPanelEditMode ? (
+                      <div className="flex flex-wrap justify-center items-center gap-8 pt-2">
+                        {/* RE-INK! */}
+                        <div className="relative">
+                          <div className={`absolute inset-0 bg-primary-dim ink-border translate-x-2 translate-y-2 transition-opacity ${!canRegenerate || isRegenerating ? "opacity-30" : ""}`} />
+                          <button
+                            onClick={handleReink}
+                            disabled={!canRegenerate || isRegenerating}
+                            className="relative bg-primary text-white ink-border px-10 py-5 font-headline text-3xl font-black italic uppercase tracking-tight hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 cursor-pointer"
+                          >
+                            RE-INK!
+                          </button>
+                        </div>
 
-                      {/* THE SAGA CONTINUES / WRAP IT UP */}
-                      <div className="relative">
-                        <div className={`absolute inset-0 bg-on-secondary-container ink-border translate-x-2 translate-y-2 transition-opacity ${isRegenerating || isApproving ? "opacity-30" : ""}`} />
-                        <button
-                          onClick={handleContinue}
-                          disabled={isRegenerating || isApproving}
-                          className="relative bg-secondary-bg text-black ink-border px-8 py-5 font-headline text-xl font-black italic uppercase tracking-tight hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 cursor-pointer flex items-center gap-3"
-                        >
-                          {isApproving ? "SAVING..." : isLastPage ? "WRAP IT UP!" : "THE SAGA CONTINUES..."}
-                          <span className="text-2xl leading-none">›</span>
-                        </button>
+                        {/* EDIT PANEL */}
+                        <div className="relative">
+                          <div className={`absolute inset-0 bg-secondary-bg ink-border translate-x-2 translate-y-2 transition-opacity ${!canRegenerate || isRegenerating ? "opacity-30" : ""}`} />
+                          <button
+                            onClick={() => { setIsPanelEditMode(true); setSelectedPanelNumber(null); }}
+                            disabled={!canRegenerate || isRegenerating}
+                            className="relative bg-secondary-bg text-black ink-border px-7 py-5 font-headline text-xl font-black italic uppercase tracking-tight hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 cursor-pointer"
+                          >
+                            EDIT PANEL
+                          </button>
+                        </div>
+
+                        {/* THE SAGA CONTINUES / WRAP IT UP */}
+                        <div className="relative">
+                          <div className={`absolute inset-0 bg-on-secondary-container ink-border translate-x-2 translate-y-2 transition-opacity ${isRegenerating || isApproving ? "opacity-30" : ""}`} />
+                          <button
+                            onClick={handleContinue}
+                            disabled={isRegenerating || isApproving}
+                            className="relative bg-secondary-bg text-black ink-border px-8 py-5 font-headline text-xl font-black italic uppercase tracking-tight hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 cursor-pointer flex items-center gap-3"
+                          >
+                            {isApproving ? "SAVING..." : isLastPage ? "WRAP IT UP!" : "THE SAGA CONTINUES..."}
+                            <span className="text-2xl leading-none">›</span>
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      /* Panel edit mode action buttons */
+                      <div className="flex flex-wrap justify-center items-center gap-6 pt-2">
+                        {/* CANCEL */}
+                        <button
+                          onClick={exitPanelEditMode}
+                          disabled={isSubmittingPanelEdit}
+                          className="bg-surface-card ink-border px-8 py-4 font-headline text-lg font-black italic uppercase tracking-tight hover:-translate-y-0.5 transition-transform duration-75 disabled:opacity-40 cursor-pointer"
+                        >
+                          CANCEL
+                        </button>
+
+                        {/* APPLY PANEL EDIT */}
+                        <div className="relative">
+                          <div className={`absolute inset-0 bg-primary-dim ink-border translate-x-2 translate-y-2 transition-opacity ${!selectedPanelNumber || !panelEditDescription.trim() || isSubmittingPanelEdit ? "opacity-30" : ""}`} />
+                          <button
+                            onClick={handleApplyPanelEdit}
+                            disabled={!selectedPanelNumber || !panelEditDescription.trim() || isSubmittingPanelEdit}
+                            className="relative bg-primary text-white ink-border px-8 py-4 font-headline text-lg font-black italic uppercase tracking-tight hover:-translate-y-1 hover:-translate-x-0.5 transition-transform duration-75 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 cursor-pointer"
+                          >
+                            {isSubmittingPanelEdit
+                              ? "GENERATING..."
+                              : selectedPanelNumber
+                              ? `APPLY PANEL ${selectedPanelNumber} EDIT`
+                              : "SELECT A PANEL FIRST"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </>

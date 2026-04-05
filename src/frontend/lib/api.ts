@@ -10,9 +10,11 @@ import type {
   ApproveComicRequest,
   GeneratePageRequest,
   GeneratePageResponse,
+  EditPanelRequest,
   SelectPageVersionRequest,
   GenerateAllResponse,
   RandomIdeaResponse,
+  BatchComicsResponse,
   Comic,
   ErrorResponse,
 } from "@/backend/lib/types";
@@ -125,10 +127,34 @@ export function selectPageVersion(
   });
 }
 
+// POST /api/comic/[id]/page/edit-panel
+export function editPanel(
+  id: string,
+  req: EditPanelRequest
+): Promise<GeneratePageResponse> {
+  return apiFetch(`/api/comic/${id}/page/edit-panel`, {
+    method: "POST",
+    body: JSON.stringify(req),
+  });
+}
+
 // POST /api/comic/[id]/generate-all
 export function generateAll(id: string): Promise<GenerateAllResponse> {
   return apiFetch(`/api/comic/${id}/generate-all`, {
     method: "POST",
+  });
+}
+
+// POST /api/comic/[id]/export/share
+export function sharePdf(id: string): Promise<{ url: string }> {
+  return apiFetch(`/api/comic/${id}/export/share`, { method: "POST" });
+}
+
+// POST /api/comic/batch
+export function batchComics(ids: string[]): Promise<BatchComicsResponse> {
+  return apiFetch("/api/comic/batch", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
   });
 }
 

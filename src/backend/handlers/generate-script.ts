@@ -12,7 +12,7 @@ export async function handleGenerateScript(id: string): Promise<NextResponse> {
   if (!comic) {
     return NextResponse.json({ error: "Comic not found" }, { status: 404 });
   }
-  if (comic.status !== "script_pending") {
+  if (comic.status !== "script_pending" && comic.status !== "script_draft") {
     return NextResponse.json(
       { error: `Cannot generate script in status "${comic.status}"` },
       { status: 409 }

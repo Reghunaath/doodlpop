@@ -166,6 +166,12 @@ export interface BatchComicsResponse {
   comics: ComicSummary[];
 }
 
+export interface EditPanelRequest {
+  pageNumber: number;
+  panelNumber: number;
+  newDescription: string;
+}
+
 export interface RandomIdeaResponse {
   idea: string;
 }

@@ -145,6 +145,11 @@ export function generateAll(id: string): Promise<GenerateAllResponse> {
   });
 }
 
+// POST /api/comic/[id]/export/share
+export function sharePdf(id: string): Promise<{ url: string }> {
+  return apiFetch(`/api/comic/${id}/export/share`, { method: "POST" });
+}
+
 // POST /api/comic/batch
 export function batchComics(ids: string[]): Promise<BatchComicsResponse> {
   return apiFetch("/api/comic/batch", {

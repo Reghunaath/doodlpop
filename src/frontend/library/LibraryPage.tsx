@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import type { ComicSummary, ComicStatus } from "@/backend/lib/types";
 import { batchComics } from "@/frontend/lib/api";
-import { getSavedComics } from "@/frontend/lib/local-storage";
+import { getSavedComics, removeSavedComic } from "@/frontend/lib/local-storage";
 
 // ── Status display mapping ───────────────────────────────────────────────
 
@@ -56,6 +56,13 @@ export default function LibraryPage() {
   const [comics, setComics] = useState<ComicSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const handleDelete = (e: React.MouseEvent, comicId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    removeSavedComic(comicId);
+    setComics((prev) => prev.filter((c) => c.id !== comicId));
+  };
 
   useEffect(() => {
     (async () => {
@@ -235,6 +242,12 @@ export default function LibraryPage() {
                           {comic.status === "complete" ? "READ →" : "CONTINUE →"}
                         </span>
                       </div>
+                      <button
+                        onClick={(e) => handleDelete(e, comic.id)}
+                        className="w-full mt-2 py-1.5 ink-border font-headline text-xs font-black uppercase bg-surface-card text-primary hover:bg-primary hover:text-white transition-colors duration-75 cursor-pointer"
+                      >
+                        DELETE
+                      </button>
                     </div>
                   </div>
                 </Link>

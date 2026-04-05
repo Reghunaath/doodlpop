@@ -47,6 +47,9 @@ export interface Comic {
 
   // Character reference sheet (generated before pages for consistency)
   characterSheetUrl?: string;
+
+  // Cached public PDF URL (uploaded to Blob on first QR request)
+  pdfUrl?: string;
 }
 
 export interface FollowUpQuestion {

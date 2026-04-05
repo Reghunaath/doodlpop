@@ -18,6 +18,7 @@ export interface StorageAdapter {
     imageBuffer: Buffer
   ): Promise<string>; // returns public URL
   uploadCharacterSheet(comicId: string, imageBuffer: Buffer): Promise<string>; // returns public URL
+  uploadPdf(comicId: string, pdfBuffer: Buffer): Promise<string>; // returns public URL
   getImageBuffer(url: string): Promise<Buffer>;
 }
 
@@ -82,6 +83,19 @@ const memoryAdapter: StorageAdapter = {
 
     const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
     return `${base}/api/comic/${comicId}/character-sheet`;
+  },
+
+  async uploadPdf(comicId, pdfBuffer) {
+    // Serve as static file from public/pdfs/
+    try {
+      const dir = path.join(process.cwd(), "public", "pdfs");
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, `${comicId}.pdf`), pdfBuffer);
+    } catch {
+      // Non-fatal
+    }
+    const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    return `${base}/pdfs/${comicId}.pdf`;
   },
 
   async getImageBuffer(url) {
@@ -152,6 +166,15 @@ async function createVercelAdapter(): Promise<StorageAdapter> {
         `comics/${comicId}/character-sheet.png`,
         imageBuffer,
         { access: "public", contentType: "image/png" }
+      );
+      return blob.url;
+    },
+
+    async uploadPdf(comicId, pdfBuffer) {
+      const blob = await put(
+        `comics/${comicId}/comic.pdf`,
+        pdfBuffer,
+        { access: "public", contentType: "application/pdf" }
       );
       return blob.url;
     },

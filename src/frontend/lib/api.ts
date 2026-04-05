@@ -149,3 +149,11 @@ export async function getRandomIdea(): Promise<string> {
   const data = await apiFetch<RandomIdeaResponse>("/api/comic/random-idea");
   return data.idea;
 }
+
+// POST /api/comic/[id]/export/pdf-url
+export async function getPdfUrl(id: string): Promise<string> {
+  const data = await apiFetch<{ url: string }>(`/api/comic/${id}/export/pdf-url`, {
+    method: "POST",
+  });
+  return data.url;
+}

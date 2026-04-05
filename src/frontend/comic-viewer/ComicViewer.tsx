@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { QRCodeSVG } from "qrcode.react";
 import type { Comic } from "@/backend/lib/types";
-import { getComic, generateAll, ApiError } from "@/frontend/lib/api";
+import { getComic, generateAll, getPdfUrl, ApiError } from "@/frontend/lib/api";
 import { updateSavedComic } from "@/frontend/lib/local-storage";
 
 interface ComicViewerProps {
@@ -15,6 +16,10 @@ export default function ComicViewer({ comicId }: ComicViewerProps) {
   const [pageIdx, setPageIdx] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showQR, setShowQR] = useState(false);
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState<string | null>(null);
   const generationTriggered = useRef(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -294,7 +299,88 @@ export default function ComicViewer({ comicId }: ComicViewerProps) {
               >
                 DOWNLOAD PDF
               </a>
+              <button
+                onClick={async () => {
+                  setShowQR(true);
+                  if (qrUrl) { console.log("[QR] Using cached URL:", qrUrl); return; }
+                  setQrLoading(true);
+                  setQrError(null);
+                  try {
+                    const url = await getPdfUrl(comicId);
+                    console.log("[QR] PDF URL received from server:", url);
+                    console.log("[QR] This URL will be encoded in the QR code. If it starts with 'http://localhost', scanning from another device will fail.");
+                    setQrUrl(url);
+                  } catch (err) {
+                    console.error("[QR] Failed to get PDF URL:", err);
+                    setQrError(err instanceof Error ? err.message : "Failed to generate PDF");
+                  } finally {
+                    setQrLoading(false);
+                  }
+                }}
+                title="Share via QR Code"
+                className="bg-secondary-bg ink-border px-5 py-4 font-headline font-black text-lg italic uppercase tracking-tight ink-shadow hover:scale-105 active:scale-95 transition-all"
+                style={{ transform: "rotate(1deg)" }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square" strokeLinejoin="miter">
+                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                  <rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/>
+                  <rect x="14" y="14" width="2" height="2" fill="currentColor" stroke="none"/><rect x="17" y="14" width="2" height="2" fill="currentColor" stroke="none"/><rect x="14" y="17" width="2" height="2" fill="currentColor" stroke="none"/><rect x="17" y="17" width="2" height="2" fill="currentColor" stroke="none"/>
+                </svg>
+              </button>
             </div>
+
+            {/* QR Code Modal */}
+            {showQR && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+                onClick={() => setShowQR(false)}
+              >
+                <div
+                  className="bg-surface ink-border ink-shadow p-8 flex flex-col items-center gap-5 max-w-xs w-full mx-4"
+                  style={{ transform: "rotate(-1deg)" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <span className="font-headline text-xl font-black uppercase italic">SCAN FOR PDF</span>
+
+                  {qrLoading && (
+                    <div className="flex flex-col items-center gap-3 py-4">
+                      <div className="w-12 h-12 border-4 border-black border-t-primary rounded-full animate-spin" />
+                      <span className="font-body text-xs text-on-surface-muted">Generating PDF...</span>
+                    </div>
+                  )}
+
+                  {qrError && (
+                    <div className="bg-primary ink-border px-4 py-2">
+                      <span className="font-headline text-xs font-black text-white uppercase">{qrError}</span>
+                    </div>
+                  )}
+
+                  {qrUrl && !qrLoading && (
+                    <>
+                      <div className="bg-white p-4 ink-border">
+                        <QRCodeSVG
+                          value={qrUrl}
+                          size={200}
+                          fgColor="#000000"
+                          bgColor="#ffffff"
+                          level="M"
+                        />
+                      </div>
+                      <p className="font-body text-xs text-on-surface-muted text-center">
+                        Scan to open the comic PDF — no internet connection to this server required.
+                      </p>
+                    </>
+                  )}
+
+                  <button
+                    onClick={() => setShowQR(false)}
+                    className="bg-primary text-white ink-border px-6 py-2 font-headline font-black text-sm uppercase italic hover:scale-105 active:scale-95 transition-all"
+                  >
+                    CLOSE
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           /* ── Empty / unknown state ─────────────── */

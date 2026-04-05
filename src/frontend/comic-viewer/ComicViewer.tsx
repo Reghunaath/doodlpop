@@ -159,6 +159,12 @@ export default function ComicViewer({ comicId }: ComicViewerProps) {
           >
             Create
           </Link>
+          <Link
+            href="/library"
+            className="font-headline font-black uppercase italic text-on-surface-muted hover:text-primary hover:-rotate-1 transition-all text-sm"
+          >
+            Library
+          </Link>
         </div>
 
         <div className="bg-secondary-bg ink-border px-4 py-1 font-headline text-xs font-black uppercase max-w-xs truncate" style={{ transform: "rotate(1deg)" }}>

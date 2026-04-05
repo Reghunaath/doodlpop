@@ -13,31 +13,31 @@ export const ART_STYLE_PRESETS = {
     label: "Manga",
     description: "Japanese manga style with expressive characters and dynamic compositions",
     promptFragment:
-      "Japanese manga style with screentones, dynamic action lines, expressive eyes, and black-and-white ink aesthetic",
+      "Japanese manga ink style: high contrast black-and-white, clean lineart with variable stroke width, screentone shading for midtones, speed lines for motion, expressive oversized eyes, sharp angular shadows, dramatic camera angles, no color",
   },
   western_comic: {
     label: "Western Comic",
     description: "Bold American comic book style with vivid colors",
     promptFragment:
-      "American superhero comic style with bold outlines, vivid colors, dynamic poses, and halftone dot shading",
+      "American superhero comic style: bold black outlines with consistent line weight, vivid saturated colors, dynamic foreshortened poses, halftone dot shading, dramatic rim lighting, strong color holds, expressive action lines",
   },
   watercolor_storybook: {
     label: "Watercolor Storybook",
     description: "Soft, dreamy watercolor illustrations",
     promptFragment:
-      "Soft watercolor children's storybook style with gentle colors, flowing brushstrokes, and warm dreamy lighting",
+      "Soft watercolor storybook style: gentle pastel color palette, flowing wet-on-wet brushstrokes, soft diffused lighting, visible paper texture, delicate linework, warm dreamy atmosphere, subtle color bleeding at edges",
   },
   minimalist_flat: {
     label: "Minimalist / Flat",
     description: "Clean, simple flat illustrations with limited colors",
     promptFragment:
-      "Minimalist flat illustration style with simple shapes, limited color palette, clean lines, and no gradients",
+      "Minimalist flat illustration style: simple geometric shapes, strictly limited color palette of 4-5 colors, clean uniform line weight, no gradients or textures, flat solid fills, generous negative space, modern graphic design aesthetic",
   },
   vintage_newspaper: {
     label: "Vintage Newspaper",
     description: "Retro newspaper comic strip aesthetic",
     promptFragment:
-      "Vintage newspaper comic strip style with muted colors, Ben-Day dots, retro lettering, and a yellowed paper texture",
+      "Vintage newspaper comic strip style: muted desaturated colors, prominent Ben-Day dot pattern, retro hand-lettered text style, yellowed paper texture, thick brush-stroke outlines, simple mid-century character designs, warm sepia undertones",
   },
 } as const;
 

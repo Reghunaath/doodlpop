@@ -62,7 +62,8 @@ export function generateScriptPrompt(
 Rules:
 - The script MUST have exactly ${pageCount} pages.
 - Each page MUST have between 2 and 6 panels.
-- Each panel MUST include a "description" field with a detailed visual description suitable for an AI image generator. Include character appearances, poses, expressions, camera angles, lighting, and background details.
+- Each panel MUST include a "description" field following this structure: [Subject & Action] + [Spatial Placement] + [Camera Angle] + [Lighting] + [Key Details]. Write full descriptive sentences, not comma-separated keyword tags. Example: "A teenage girl leaps across a rain-soaked rooftop in the foreground, city skyline behind her at dusk. Low-angle shot looking up, warm golden backlight silhouetting her figure. Wind blows her short black hair, motion lines trail behind her."
+- Each panel description MUST include spatial placement terms (e.g., "in the foreground", "centered", "upper-left third of the frame") and a camera angle (e.g., "close-up", "wide establishing shot", "low-angle worm's-eye view", "bird's-eye view").
 - Dialogue should be natural and fit the genre.
 - Captions are optional narrator text.
 - The story must have a clear beginning, middle, and end.
@@ -146,7 +147,7 @@ export function characterSheetPrompt(
         ]
           .filter(Boolean)
           .join("\n   ");
-        return `${i + 1}. ${char.name}\n   ${details}\n   Show: front view, side view, and one expressive pose. Label clearly.`;
+        return `${i + 1}. ${char.name}\n   ${details}\n   Show: front view, 3/4 view, and side view at full-body scale. Below each angle, show 3 facial expressions (neutral, happy, angry). Label clearly.`;
       })
       .join("\n");
   } else {
@@ -164,7 +165,7 @@ export function characterSheetPrompt(
     characterBlock = Array.from(characterNames)
       .map(
         (name, i) =>
-          `${i + 1}. ${name} — show front view, side view, and one expressive pose. Label each character clearly.`
+          `${i + 1}. ${name} — show front view, 3/4 view, and side view at full-body scale. Below each angle, show 3 facial expressions (neutral, happy, angry). Label each character and expression clearly.`
       )
       .join("\n");
   }
@@ -178,13 +179,44 @@ ${characterBlock}
 
 Important:
 - Clean white or neutral background.
-- Show each character at full body scale.
+- Show each character at full body scale with consistent proportions.
+- Clean lineart with high detail and sharp outlines.
 - Make character designs distinct and memorable.
 - Style must be: ${artStyleDescription}
 - This is a reference sheet, not a comic page — no panels, no speech bubbles, no story.`;
 }
 
 // ---- Stage 5: Panel Image Generation ----
+
+function getLayoutHint(panelCount: number): string {
+  switch (panelCount) {
+    case 2:
+      return "Two equal panels stacked vertically.";
+    case 3:
+      return "Two panels across the top row, one wide cinematic panel spanning the bottom.";
+    case 4:
+      return "2×2 grid with equal panel sizes.";
+    case 5:
+      return "Two panels top row, one wide panel in the middle, two panels bottom row.";
+    case 6:
+      return "3×2 grid arrangement with equal panel sizes.";
+    default:
+      return `${panelCount} panels arranged in a balanced comic book layout.`;
+  }
+}
+
+function getPacingNote(pageNumber: number, totalPages: number): string {
+  if (totalPages === 1) {
+    return "Single-page story — establish setting, deliver the arc, and conclude with impact.";
+  }
+  if (pageNumber === 1) {
+    return "Opening page — establish the setting, introduce characters, and set the tone.";
+  }
+  if (pageNumber === totalPages) {
+    return "Final page — deliver resolution, emotional payoff, and a satisfying conclusion.";
+  }
+  return "Mid-story page — build tension, advance the plot, and maintain momentum.";
+}
 
 export function generatePageImagePrompt(
   scriptPage: ScriptPage,
@@ -199,38 +231,40 @@ export function generatePageImagePrompt(
   const artStyleDescription = getArtStyleDescription(artStyle, customStylePrompt);
   const panelCount = scriptPage.panels.length;
 
+  // SOURCE MATERIAL — per-panel descriptions with style anchoring
   const panelDescriptions = scriptPage.panels
     .map((panel) => {
       const dialogueLines =
         panel.dialogue.length > 0
           ? panel.dialogue
-              .map((d) => `  Speech bubble — ${d.speaker}: "${d.text}"`)
+              .map((d) => `  Dialogue — ${d.speaker}: "${d.text}"`)
               .join("\n")
           : "  No dialogue.";
       const caption = panel.caption
-        ? `  Caption box: "${panel.caption}"`
+        ? `  Caption: "${panel.caption}"`
         : "";
       return `Panel ${panel.panelNumber}:
-  Visual: ${panel.description}
-${dialogueLines}${caption ? "\n" + caption : ""}`;
+  Subject & Action: ${panel.description}
+${dialogueLines}${caption ? "\n" + caption : ""}
+  Style continuity: ${artStyleDescription}`;
     })
     .join("\n\n");
 
-  // Build reference image instructions
+  // REFERENCE IMAGES section
   const refInstructions: string[] = [];
   if (hasCharacterSheet) {
     refInstructions.push(
-      "- The FIRST attached reference image is a CHARACTER REFERENCE SHEET. You MUST use it to keep every character's design (face, body, outfit, colors, proportions) exactly consistent. Do NOT deviate from the character designs shown in the sheet."
+      "The FIRST attached reference image is a CHARACTER REFERENCE SHEET. You MUST use it to keep every character's design (face, body, outfit, colors, proportions) exactly consistent. Do NOT deviate from the character designs shown in the sheet."
     );
   }
   if (hasPreviousPage) {
     refInstructions.push(
-      `- The ${hasCharacterSheet ? "SECOND" : "FIRST"} attached reference image is the PREVIOUS comic page. Match the art style, color palette, character appearances, and visual tone from that page to ensure visual continuity across the comic.`
+      `The ${hasCharacterSheet ? "SECOND" : "FIRST"} attached reference image is the PREVIOUS comic page. Match the art style, color palette, character appearances, and visual tone from that page to ensure visual continuity across the comic.`
     );
   }
   const refBlock =
     refInstructions.length > 0
-      ? `\nReference images provided:\n${refInstructions.join("\n")}\n`
+      ? `\nREFERENCE IMAGES:\n${refInstructions.join("\n")}\n`
       : "";
 
   // Build character description block for textual reinforcement
@@ -246,7 +280,7 @@ ${dialogueLines}${caption ? "\n" + caption : ""}`;
     );
 
     if (relevantChars.length > 0) {
-      characterBlock = `\nCharacter appearance reference (maintain these designs exactly):\n${relevantChars
+      characterBlock = `\nCHARACTER APPEARANCE REFERENCE (maintain these designs exactly):\n${relevantChars
         .map((c) => {
           const parts = [`- ${c.name}: ${c.appearance}`];
           if (c.clothing) parts.push(`  Outfit: ${c.clothing}`);
@@ -256,19 +290,81 @@ ${dialogueLines}${caption ? "\n" + caption : ""}`;
     }
   }
 
-  return `Create a single comic book page illustration in ${artStyleDescription} style.
-
+  return `WORK SURFACE:
+A single comic book page, ${panelCount} panels, portrait orientation, ${IMAGE_ASPECT_RATIO} aspect ratio, 1K resolution.
 This is page ${scriptPage.pageNumber} of ${totalPages} in a comic called "${comicTitle}".
-${refBlock}${characterBlock}
-The page has ${panelCount} panels arranged in a comic book layout:
 
+LAYOUT:
+${getLayoutHint(panelCount)} Use clear panel borders with uniform gutters between panels.
+${refBlock}${characterBlock}
+COMPONENTS:
+• ${panelCount} comic panels with clearly defined black borders
+• Speech bubbles with dialogue text, placed in the upper region of panels, never overlapping character faces
+• Caption boxes for narrator text where specified
+• Consistent character designs across all panels
+
+STYLE:
+${artStyleDescription}
+
+SOURCE MATERIAL:
 ${panelDescriptions}
 
-Important instructions:
-- Render this as a SINGLE comic book page with clearly defined panel borders.
-- Include speech bubbles with the dialogue text inside each panel.
-- Include caption boxes for narrator text where specified.
-- Keep character appearances EXACTLY consistent across all panels and with any provided reference images.
-- The overall style must be: ${artStyleDescription}
-- Use a ${IMAGE_ASPECT_RATIO} aspect ratio.`;
+CONSTRAINTS:
+• No overlap between speech bubbles and character faces
+• Text inside speech bubbles must be sharp and readable at small sizes
+• Character design must remain IDENTICAL across all panels and with any provided reference images
+• Character design must NOT deviate from the character sheet and the previous page attached for reference, if provided.
+• Uniform spacing between panel borders
+• Consistent shadow direction and lighting across all panels
+• Consistent color palette throughout the page
+
+INTERPRETATION:
+This is page ${scriptPage.pageNumber} of ${totalPages}. ${getPacingNote(scriptPage.pageNumber, totalPages)}`;
+}
+
+// ---- Panel Edit: targeted single-panel revision ----
+
+export function panelEditImagePrompt(
+  scriptPage: ScriptPage,
+  artStyle: ArtStylePreset,
+  comicTitle: string,
+  totalPages: number,
+  editingPanelNumber: number,
+  newDescription: string,
+  customStylePrompt?: string
+): string {
+  // Build a modified script page with only the edited panel's description overridden
+  const modifiedPage: ScriptPage = {
+    ...scriptPage,
+    panels: scriptPage.panels.map((panel) =>
+      panel.panelNumber === editingPanelNumber
+        ? { ...panel, description: newDescription }
+        : panel
+    ),
+  };
+
+  const otherPanelNums = scriptPage.panels
+    .filter((p) => p.panelNumber !== editingPanelNumber)
+    .map((p) => `Panel ${p.panelNumber}`)
+    .join(", ");
+
+  // Base prompt: character sheet = ref[0], no previous page (we'll describe ref[1] ourselves)
+  const basePrompt = generatePageImagePrompt(
+    modifiedPage,
+    artStyle,
+    comicTitle,
+    totalPages,
+    customStylePrompt,
+    true,  // hasCharacterSheet → ref[0] described as character sheet
+    false  // hasPreviousPage → we handle ref[1] below
+  );
+
+  const revisionHeader = `PANEL REVISION MODE — targeted single-panel edit:
+The SECOND attached reference image is the CURRENT VERSION of this page as previously generated.
+${otherPanelNums ? `Keep ${otherPanelNums} EXACTLY as they appear in the current version — identical composition, characters, colors, speech bubbles, panel borders, and linework. Do NOT redraw or alter them.` : ""}
+Only Panel ${editingPanelNumber} should be re-drawn with its updated description.
+
+`;
+
+  return revisionHeader + basePrompt;
 }

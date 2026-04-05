@@ -46,6 +46,23 @@ function validateScript(script: Script, expectedPageCount: number): void {
       );
     }
   }
+
+  // Validate characters if present (optional field for backward compat)
+  if (script.characters) {
+    if (!Array.isArray(script.characters)) {
+      throw new Error("Script characters must be an array");
+    }
+    for (const char of script.characters) {
+      if (!char.name || typeof char.name !== "string") {
+        throw new Error("Each character must have a name");
+      }
+      if (!char.appearance || typeof char.appearance !== "string") {
+        throw new Error(
+          `Character "${char.name}" missing appearance description`
+        );
+      }
+    }
+  }
 }
 
 export async function generateScript(

@@ -93,7 +93,8 @@ export async function handleRegeneratePage(
     comic.pageCount,
     comic.customStylePrompt,
     hasCharacterSheet,
-    hasPreviousPage
+    hasPreviousPage,
+    comic.script.characters
   );
 
   const imageBuffer = await generatePageImage(prompt, refs);

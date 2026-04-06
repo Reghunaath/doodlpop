@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   title: "Doodlpop — Turn Your Ideas Into Comics",
   description:
     "Type a story idea. AI writes and illustrates your full comic. No drawing skills needed.",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({

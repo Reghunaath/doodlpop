@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import type { ComicSummary, ComicStatus } from "@/backend/lib/types";
-import { batchComics } from "@/frontend/lib/api";
-import { getSavedComics, removeSavedComic } from "@/frontend/lib/local-storage";
+import { listComics } from "@/frontend/lib/api";
 
 // ── Status display mapping ───────────────────────────────────────────────
 
@@ -57,23 +56,10 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const handleDelete = (e: React.MouseEvent, comicId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    removeSavedComic(comicId);
-    setComics((prev) => prev.filter((c) => c.id !== comicId));
-  };
-
   useEffect(() => {
     (async () => {
       try {
-        const saved = getSavedComics();
-        if (saved.length === 0) {
-          setComics([]);
-          return;
-        }
-        const ids = saved.map((s) => s.comicId);
-        const res = await batchComics(ids);
+        const res = await listComics();
         setComics(res.comics);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load library");
@@ -210,6 +196,7 @@ export default function LibraryPage() {
                     {/* Thumbnail */}
                     <div className="relative w-full aspect-[3/4] border-b-4 border-black overflow-hidden bg-surface-card">
                       {comic.thumbnailUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={comic.thumbnailUrl}
                           alt={comic.title ?? "Comic thumbnail"}
@@ -242,12 +229,6 @@ export default function LibraryPage() {
                           {comic.status === "complete" ? "READ →" : "CONTINUE →"}
                         </span>
                       </div>
-                      <button
-                        onClick={(e) => handleDelete(e, comic.id)}
-                        className="w-full mt-2 py-1.5 ink-border font-headline text-xs font-black uppercase bg-surface-card text-primary hover:bg-primary hover:text-white transition-colors duration-75 cursor-pointer"
-                      >
-                        DELETE
-                      </button>
                     </div>
                   </div>
                 </Link>

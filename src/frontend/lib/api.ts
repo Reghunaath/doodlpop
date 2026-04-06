@@ -15,6 +15,7 @@ import type {
   GenerateAllResponse,
   RandomIdeaResponse,
   BatchComicsResponse,
+  ComicSummary,
   Comic,
   ErrorResponse,
 } from "@/backend/lib/types";
@@ -156,6 +157,11 @@ export function batchComics(ids: string[]): Promise<BatchComicsResponse> {
     method: "POST",
     body: JSON.stringify({ ids }),
   });
+}
+
+// GET /api/comic/library
+export function listComics(): Promise<{ comics: ComicSummary[] }> {
+  return apiFetch("/api/comic/library");
 }
 
 // GET /api/comic/random-idea

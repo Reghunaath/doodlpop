@@ -36,18 +36,40 @@ const imagesMap = (global._doodlpopImages ??= new Map<string, Buffer>());
 
 const memoryAdapter: StorageAdapter = {
   async getComic(id) {
-    return comicsMap.get(id) ?? null;
+    const cached = comicsMap.get(id);
+    if (cached) return cached;
+
+    // Fallback: read from disk (survives server restarts)
+    try {
+      const metadataPath = path.join(process.cwd(), "generated", id, "metadata.json");
+      if (fs.existsSync(metadataPath)) {
+        const comic: Comic = JSON.parse(fs.readFileSync(metadataPath, "utf-8"));
+        comicsMap.set(id, comic);
+        return comic;
+      }
+    } catch {
+      // Non-fatal
+    }
+    return null;
   },
 
   async getComicsBatch(ids) {
-    return ids.flatMap((id) => {
-      const comic = comicsMap.get(id);
-      return comic ? [comic] : [];
-    });
+    return (await Promise.all(ids.map((id) => memoryAdapter.getComic(id)))).filter(
+      (c): c is Comic => c !== null
+    );
   },
 
   async saveComic(comic) {
     comicsMap.set(comic.id, comic);
+
+    // Persist metadata to disk so the library survives server restarts
+    try {
+      const dir = path.join(process.cwd(), "generated", comic.id);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, "metadata.json"), JSON.stringify(comic));
+    } catch {
+      // Non-fatal
+    }
   },
 
   async uploadImage(comicId, pageNumber, versionIndex, imageBuffer) {
@@ -63,8 +85,8 @@ const memoryAdapter: StorageAdapter = {
       // Non-fatal
     }
 
-    const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-    return `${base}/api/comic/${comicId}/image/${pageNumber}/${versionIndex}`;
+    // Use relative URL so it works on any port
+    return `/api/comic/${comicId}/image/${pageNumber}/${versionIndex}`;
   },
 
   async uploadCharacterSheet(comicId, imageBuffer) {
@@ -80,8 +102,8 @@ const memoryAdapter: StorageAdapter = {
       // Non-fatal
     }
 
-    const base = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-    return `${base}/api/comic/${comicId}/character-sheet`;
+    // Use relative URL so it works on any port
+    return `/api/comic/${comicId}/character-sheet`;
   },
 
   async getImageBuffer(url) {
@@ -90,8 +112,11 @@ const memoryAdapter: StorageAdapter = {
     if (sheetMatch) {
       const key = `comics/${sheetMatch[1]}/character-sheet.png`;
       const buf = imagesMap.get(key);
-      if (!buf) throw new Error(`Character sheet not found: ${key}`);
-      return buf;
+      if (buf) return buf;
+      // Fallback: read from disk
+      const diskPath = path.join(process.cwd(), "generated", sheetMatch[1], "character-sheet.png");
+      if (fs.existsSync(diskPath)) return fs.readFileSync(diskPath);
+      throw new Error(`Character sheet not found: ${key}`);
     }
     // Page image URL: /api/comic/{id}/image/{page}/{version}
     const pageMatch = url.match(/\/api\/comic\/([^/]+)\/image\/(\d+)\/(\d+)/);
@@ -99,8 +124,11 @@ const memoryAdapter: StorageAdapter = {
     const [, comicId, pageNumber, versionIndex] = pageMatch;
     const key = `comics/${comicId}/page-${pageNumber}-v${versionIndex}.png`;
     const buf = imagesMap.get(key);
-    if (!buf) throw new Error(`Image not found: ${key}`);
-    return buf;
+    if (buf) return buf;
+    // Fallback: read from disk
+    const diskPath = path.join(process.cwd(), "generated", comicId, `page-${pageNumber}-v${versionIndex}.png`);
+    if (fs.existsSync(diskPath)) return fs.readFileSync(diskPath);
+    throw new Error(`Image not found: ${key}`);
   },
 };
 

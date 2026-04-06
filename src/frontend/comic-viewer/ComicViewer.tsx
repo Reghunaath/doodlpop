@@ -7,6 +7,11 @@ import { getComic, generateAll, sharePdf, ApiError } from "@/frontend/lib/api";
 import QRCode from "qrcode";
 import { updateSavedComic } from "@/frontend/lib/local-storage";
 
+// Strip hardcoded hostname from stored URLs so images work on any port
+function toRelativeUrl(url: string): string {
+  try { return new URL(url).pathname; } catch { return url; }
+}
+
 interface ComicViewerProps {
   comicId: string;
 }
@@ -222,7 +227,7 @@ export default function ComicViewer({ comicId }: ComicViewerProps) {
             {/* Show generated pages so far */}
             <div className="space-y-6">
               {sortedPages.map((page) => {
-                const imgUrl = page.versions[page.selectedVersionIndex]?.imageUrl;
+                const imgUrl = toRelativeUrl(page.versions[page.selectedVersionIndex]?.imageUrl ?? "");
                 return (
                   <div key={page.pageNumber} className="bg-white ink-border ink-shadow p-3 max-w-2xl mx-auto">
                     <div className="flex items-center gap-3 mb-3">
@@ -305,7 +310,7 @@ export default function ComicViewer({ comicId }: ComicViewerProps) {
                 <div className="border-4 border-black overflow-hidden" style={{ aspectRatio: "2/3" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={currentPage.versions[currentPage.selectedVersionIndex]?.imageUrl}
+                    src={toRelativeUrl(currentPage.versions[currentPage.selectedVersionIndex]?.imageUrl ?? "")}
                     alt={`Comic page ${currentPage.pageNumber}`}
                     className="w-full h-full object-cover"
                   />

@@ -13,6 +13,11 @@ import {
 } from "@/frontend/lib/api";
 import { updateSavedComic } from "@/frontend/lib/local-storage";
 
+// Strip hardcoded hostname from stored URLs so images work on any port
+function toRelativeUrl(url: string): string {
+  try { return new URL(url).pathname; } catch { return url; }
+}
+
 interface SupervisedViewerProps {
   comicId: string;
 }
@@ -203,7 +208,7 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
   }
 
   const currentImageUrl = currentPage
-    ? currentPage.versions[selectedVersion]?.imageUrl
+    ? toRelativeUrl(currentPage.versions[selectedVersion]?.imageUrl ?? "")
     : null;
 
   const versionsCount = currentPage?.versions.length ?? 0;
@@ -518,7 +523,7 @@ export default function SupervisedViewer({ comicId }: SupervisedViewerProps) {
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                              src={v.imageUrl}
+                              src={toRelativeUrl(v.imageUrl)}
                               alt={`Version ${i + 1}`}
                               className="w-full h-full object-cover"
                             />

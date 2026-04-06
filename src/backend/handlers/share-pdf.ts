@@ -51,7 +51,7 @@ export async function handleSharePdf(id: string): Promise<NextResponse> {
     const blob = await put(
       `comics/${id}/${filename}.pdf`,
       pdfBuffer,
-      { access: "public", contentType: "application/pdf" }
+      { access: "public", contentType: "application/pdf", allowOverwrite: true }
     );
 
     return NextResponse.json({ url: blob.url });

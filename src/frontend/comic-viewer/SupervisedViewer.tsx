@@ -13,9 +13,16 @@ import {
 } from "@/frontend/lib/api";
 import { updateSavedComic } from "@/frontend/lib/local-storage";
 
-// Strip hardcoded hostname from stored URLs so images work on any port
+// Strip hostname only for localhost URLs (dev) so images work on any port.
+// Vercel Blob URLs (non-localhost) must stay absolute.
 function toRelativeUrl(url: string): string {
-  try { return new URL(url).pathname; } catch { return url; }
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+      return parsed.pathname;
+    }
+    return url;
+  } catch { return url; }
 }
 
 interface SupervisedViewerProps {

@@ -90,8 +90,15 @@ const memoryAdapter: StorageAdapter = {
     if (sheetMatch) {
       const key = `comics/${sheetMatch[1]}/character-sheet.png`;
       const buf = imagesMap.get(key);
-      if (!buf) throw new Error(`Character sheet not found: ${key}`);
-      return buf;
+      if (buf) return buf;
+      // Fallback: read from disk (survives hot-reload)
+      const diskPath = path.join(process.cwd(), "generated", sheetMatch[1], "character-sheet.png");
+      if (fs.existsSync(diskPath)) {
+        const diskBuf = fs.readFileSync(diskPath);
+        imagesMap.set(key, diskBuf);
+        return diskBuf;
+      }
+      throw new Error(`Character sheet not found: ${key}`);
     }
     // Page image URL: /api/comic/{id}/image/{page}/{version}
     const pageMatch = url.match(/\/api\/comic\/([^/]+)\/image\/(\d+)\/(\d+)/);
@@ -99,8 +106,15 @@ const memoryAdapter: StorageAdapter = {
     const [, comicId, pageNumber, versionIndex] = pageMatch;
     const key = `comics/${comicId}/page-${pageNumber}-v${versionIndex}.png`;
     const buf = imagesMap.get(key);
-    if (!buf) throw new Error(`Image not found: ${key}`);
-    return buf;
+    if (buf) return buf;
+    // Fallback: read from disk (survives hot-reload)
+    const diskPath = path.join(process.cwd(), "generated", comicId, `page-${pageNumber}-v${versionIndex}.png`);
+    if (fs.existsSync(diskPath)) {
+      const diskBuf = fs.readFileSync(diskPath);
+      imagesMap.set(key, diskBuf);
+      return diskBuf;
+    }
+    throw new Error(`Image not found: ${key}`);
   },
 };
 

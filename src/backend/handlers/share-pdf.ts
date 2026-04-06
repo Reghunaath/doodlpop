@@ -43,15 +43,23 @@ export async function handleSharePdf(id: string): Promise<NextResponse> {
   const pdfBuffer = Buffer.from(pdfBytes);
 
   // Upload to Vercel Blob
-  const { put } = await import("@vercel/blob");
-  const title = comic.script?.title ?? "comic";
-  const filename = title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  try {
+    const { put } = await import("@vercel/blob");
+    const title = comic.script?.title ?? "comic";
+    const filename = title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 
-  const blob = await put(
-    `comics/${id}/${filename}.pdf`,
-    pdfBuffer,
-    { access: "public", contentType: "application/pdf" }
-  );
+    const blob = await put(
+      `comics/${id}/${filename}.pdf`,
+      pdfBuffer,
+      { access: "public", contentType: "application/pdf" }
+    );
 
-  return NextResponse.json({ url: blob.url });
+    return NextResponse.json({ url: blob.url });
+  } catch (err) {
+    console.error("[share-pdf] Blob upload failed:", err);
+    return NextResponse.json(
+      { error: `Blob upload failed: ${err instanceof Error ? err.message : String(err)}` },
+      { status: 500 }
+    );
+  }
 }

@@ -96,6 +96,23 @@ export default function LibraryPage() {
         </Link>
       </nav>
 
+      {/* ── DEMO BANNER ─────────────────────────────────── */}
+      <div className="w-full bg-secondary-bg border-b-4 border-black px-6 py-5">
+        <p className="text-center font-headline text-xl font-black uppercase text-black leading-snug flex items-center justify-center gap-3 flex-wrap">
+          <span className="inline-flex items-center justify-center w-10 h-10 bg-primary text-white font-black text-lg ink-border shrink-0">!</span>
+          This is a read-only demo — comic creation requires a Gemini API key.{" "}
+          <a
+            href="https://github.com/Reghunaath/doodlpop"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:opacity-80"
+          >
+            Host it yourself on GitHub →
+          </a>
+          <span className="inline-flex items-center justify-center w-10 h-10 bg-primary text-white font-black text-lg ink-border shrink-0">!</span>
+        </p>
+      </div>
+
       {/* ── PAGE HEADER ─────────────────────────────────── */}
       <div className="max-w-6xl mx-auto w-full px-4 pt-10 pb-6">
         <div className="flex flex-col md:flex-row justify-between items-end border-b-4 border-black pb-4 gap-4">
